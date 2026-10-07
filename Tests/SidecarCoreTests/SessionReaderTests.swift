@@ -92,6 +92,12 @@ final class SessionReaderTests: XCTestCase, @unchecked Sendable {
         try f.write(ReaderFixture.native(1, id: "new"), "sessions/new.jsonl")
         let sessions = await SessionCatalog().discover(root: f.root)
         let reader = SessionReader()
+        let updates = await reader.snapshots()
+        let observer = Task {
+            var identities: [String] = []
+            for await state in updates { identities += state.requests.map { $0.key.threadID } }
+            return identities
+        }
         let old = Task { await reader.select(sessions.first { $0.id == Fixture.threadID }!) }
         while !(await reader.isReading) { await Task.yield() }
         await reader.select(sessions.first { $0.id == "new" }!)
@@ -99,6 +105,9 @@ final class SessionReaderTests: XCTestCase, @unchecked Sendable {
         let awaited17 = (await reader.currentSnapshot())
         XCTAssertEqual(awaited17?.requests.first?.key.threadID, "new")
         await reader.stop()
+        let identities = await observer.value
+        XCTAssertFalse(identities.isEmpty)
+        XCTAssertTrue(identities.allSatisfy { $0 == "new" })
     }
     func testStoppedStreamFinishesAndReaderReleasesState() async throws {
         let f = try ReaderFixture(); let reader = SessionReader()

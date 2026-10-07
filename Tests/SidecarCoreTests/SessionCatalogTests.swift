@@ -78,7 +78,7 @@ final class SessionCatalogTests: XCTestCase, @unchecked Sendable {
             return Double.infinity
         }
         await fulfillment(of: [initial], timeout: 1)
-        try f.write(ReaderFixture.native(1), "sessions/nested/new.jsonl")
+        try f.write(ReaderFixture.native(10000), "sessions/nested/new.jsonl")
         await fulfillment(of: [discovered], timeout: 6)
         consumer.cancel()
         let seconds = await consumer.value
@@ -167,6 +167,21 @@ final class SessionCatalogTests: XCTestCase, @unchecked Sendable {
         XCTAssertNil(ambiguous.parentThreadID)
         var selection = SessionSelection(); selection.update([ambiguous])
         XCTAssertNil(selection.mostRecentSuggestion)
+    }
+
+    func testOlderConcurrentDiscoveryCannotChangeNewerStatus() async throws {
+        let f = try ReaderFixture()
+        let padding = String(repeating: "a", count: 7 * 1024 * 1024)
+        let header = Data("{\"type\":\"session_meta\",\"payload\":{\"id\":\"old\",\"ignored\":\"\(padding)\"}}\n".utf8)
+        for index in 0..<5 { try f.write(header, "sessions/\(index).jsonl") }
+        let catalog = SessionCatalog(watcherHints: false)
+        let old = Task { await catalog.discover(root: f.root) }
+        try await Task.sleep(for: .milliseconds(10))
+        _ = await catalog.discover(root: f.root.appendingPathComponent("missing"))
+        _ = await old.value
+        let status = await catalog.lastStatus
+        XCTAssertEqual(status, .missingRoot)
+        await catalog.stop()
     }
 
 }
