@@ -246,3 +246,51 @@ extension TokenUsage {
                               total: difference(total, other.total)).validated()
     }
 }
+
+extension MetricEvent {
+    /// Value signature for exact copy/prefix comparison. No timestamps are sorted.
+    var copySignature: MetricEvent {
+        let position = SourcePosition(fileID: "copy-signature", byteOffset: 0)
+        switch self {
+        case .header(let v):
+            return .header(SessionHeader(threadID: v.threadID, runtimeSessionID: v.runtimeSessionID,
+                cliVersion: v.cliVersion, parentThreadID: v.parentThreadID, timestamp: v.timestamp, source: position))
+        case .taskStarted(let v): return .taskStarted(v.at(position))
+        case .taskFinished(let v): return .taskFinished(v.at(position))
+        case .taskInterrupted(let v): return .taskInterrupted(v.at(position))
+        case .configuredModel(let v):
+            return .configuredModel(ConfiguredModel(taskID: v.taskID, rootTaskID: v.rootTaskID,
+                model: v.model, timestamp: v.timestamp, source: position))
+        case .usageRecord(let v): return .usageRecord(v.at(position))
+        case .usageSnapshot(let v):
+            return .usageSnapshot(UsageSnapshot(lastUsage: v.lastUsage, cumulative: v.cumulative,
+                modelContextWindow: v.modelContextWindow, timestamp: v.timestamp, source: position))
+        case .toolCall(let v):
+            return .toolCall(ToolCall(callID: v.callID, name: v.name, namespace: v.namespace, kind: v.kind,
+                itemID: v.itemID, threadID: v.threadID, taskID: v.taskID, isCompleted: v.isCompleted,
+                timestamp: v.timestamp, source: position))
+        case .toolOutput(let v):
+            return .toolOutput(ToolOutput(callID: v.callID, kind: v.kind, threadID: v.threadID,
+                taskID: v.taskID, timestamp: v.timestamp, source: position))
+        case .checkpoint(let v):
+            return .checkpoint(UsageCheckpoint(responseID: v.responseID,
+                latestUsageRecord: v.latestUsageRecord?.at(position), timestamp: v.timestamp, source: position))
+        case .unknown: return .unknown
+        }
+    }
+}
+
+private extension TaskMetadata {
+    func at(_ source: SourcePosition) -> TaskMetadata {
+        TaskMetadata(taskID: taskID, rootTaskID: rootTaskID, modelContextWindow: modelContextWindow,
+                     timestamp: timestamp, source: source)
+    }
+}
+
+private extension UsageRecord {
+    func at(_ source: SourcePosition) -> UsageRecord {
+        UsageRecord(key: key, runtimeSessionID: runtimeSessionID, taskID: taskID, rootTaskID: rootTaskID,
+                    timestamp: timestamp, usage: usage, taskCumulative: taskCumulative,
+                    threadCumulative: threadCumulative, source: source)
+    }
+}

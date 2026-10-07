@@ -95,6 +95,25 @@ final class SessionReducerTests: XCTestCase {
         XCTAssertEqual(state.requests.count, 2)
     }
 
+    func testOlderPrefixCopyDoesNotReopenCompletedTask() throws {
+        let full = try Fixture.events("native-two-requests")
+        let prefix = try Fixture.lines("native-two-requests").prefix(5).enumerated().compactMap {
+            RolloutDecoder().decodeLine($0.element, at: SourcePosition(fileID: "archive-prefix", byteOffset: Int64($0.offset))).event
+        }
+        let state = SessionReducer.reduce(full + prefix, owningThreadID: Fixture.threadID)
+        XCTAssertEqual(state.tasks.first?.status, .completed)
+        XCTAssertEqual(state.totals.total, 180)
+    }
+    func testTasklessTerminalEventsUseOnlySingleActiveTask() throws {
+        XCTAssertEqual(try reduce("taskless-interruption").tasks.first?.status, .interrupted)
+        XCTAssertEqual(try reduce("taskless-completion").tasks.first?.status, .completed)
+    }
+    func testDifferingWindowCopyCannotReopenCompletedTask() throws {
+        let state = SessionReducer.reduce(try Fixture.events("native-two-requests") + Fixture.changedPrefixCopy(),
+                                          owningThreadID: Fixture.threadID)
+        XCTAssertEqual(state.tasks.first?.status, .completed)
+        XCTAssertEqual(state.totals.total, 180)
+    }
     private func reduce(_ name: String) throws -> DerivedSession {
         SessionReducer.reduce(try Fixture.events(name), owningThreadID: Fixture.threadID)
     }

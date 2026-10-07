@@ -89,6 +89,13 @@ final class ReconciliationTests: XCTestCase {
         XCTAssertEqual(state.reconciliation.status, .partialHistory)
         XCTAssertNil(state.reconciliation.reportedCumulative?.total)
     }
+    func testOverriddenSnapshotDoesNotCertifyNativeContinuity() throws {
+        let state = try reduce("native-context-full-snapshot")
+        XCTAssertEqual(state.totals.total, 120)
+        XCTAssertEqual(state.requests.count, 1)
+        XCTAssertEqual(state.reconciliation.reportedCumulative?.total, 120)
+        XCTAssertEqual(state.reconciliation.status, .degraded)
+    }
     private func reduce(_ name: String) throws -> DerivedSession {
         SessionReducer.reduce(try Fixture.events(name), owningThreadID: Fixture.threadID)
     }

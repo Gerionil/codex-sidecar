@@ -15,6 +15,17 @@ enum Fixture {
         }
     }
 
+    static func changedPrefixCopy(model: Bool = false) throws -> [MetricEvent] {
+        try lines("native-two-requests").prefix(5).enumerated().compactMap { index, line in
+            let text = String(decoding: line, as: UTF8.self)
+                .replacingOccurrences(of: model ? "example-model" : "model_context_window\":1000",
+                                      with: model ? "other-model" : "model_context_window\":2000")
+            let result = RolloutDecoder().decodeLine(Data(text.utf8), at: SourcePosition(fileID: "differing-copy", byteOffset: Int64(index)))
+            guard result.diagnostics.isEmpty else { throw CocoaError(.fileReadCorruptFile) }
+            return result.event
+        }
+    }
+
     static func lines(_ name: String) throws -> [Data] {
         guard let url = Bundle.module.url(forResource: name, withExtension: "jsonl") else {
             throw CocoaError(.fileNoSuchFile)

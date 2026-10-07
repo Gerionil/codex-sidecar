@@ -57,6 +57,26 @@ public struct SessionReducer {
             filtered.append(event)
         }
 
+        // Exact copies and older prefixes have no additional evidence. Remove
+        // them before lifecycle/context replay so they cannot reopen old tasks.
+        let fileOrder = filtered.compactMap { $0.source?.fileID }.reduce(into: [String]()) {
+            if !$0.contains($1) { $0.append($1) }
+        }
+        let streams = Dictionary(grouping: filtered, by: { $0.source!.fileID })
+        let signatures = streams.mapValues { $0.map(\.copySignature) }
+        var redundant = Set<String>()
+        for (index, fileID) in fileOrder.enumerated() {
+            guard let stream = signatures[fileID] else { continue }
+            for (otherIndex, otherID) in fileOrder.enumerated() where otherID != fileID {
+                guard let other = signatures[otherID], other.count >= stream.count,
+                      (other.count > stream.count || otherIndex < index),
+                      Array(other.prefix(stream.count)) == stream else { continue }
+                redundant.insert(fileID)
+                break
+            }
+        }
+        filtered.removeAll { redundant.contains($0.source!.fileID) }
+
         var ledger: [RequestKey: UsageRecord] = [:]
         var order: [RequestKey] = []
         var quarantine = Set<RequestKey>()
@@ -68,17 +88,36 @@ public struct SessionReducer {
         var taskOrder: [String] = []
         var starts = Set<String>()
         var statuses: [String: DerivedTask.Status] = [:]
+        var activeTasks: [String: Set<String>] = [:]
+        var terminalSources: [String: String] = [:]
+        var conflictingModels = Set<RequestKey>()
         func ensureTask(_ id: String) {
             if !taskOrder.contains(id) { taskOrder.append(id) }
         }
         for event in filtered {
             switch event {
             case .taskStarted(let task):
-                if let id = task.taskID { ensureTask(id); starts.insert(id); statuses[id] = .active }
+                if let id = task.taskID {
+                    ensureTask(id); starts.insert(id)
+                    if terminalSources[id] == nil || terminalSources[id] == task.source.fileID {
+                        statuses[id] = .active
+                    }
+                    activeTasks[task.source.fileID, default: []].insert(id)
+                }
             case .taskFinished(let task):
-                if let id = task.taskID { ensureTask(id); statuses[id] = .completed }
+                let active = activeTasks[task.source.fileID] ?? []
+                if let id = task.taskID ?? (active.count == 1 ? active.first : nil) {
+                    ensureTask(id); statuses[id] = .completed
+                    terminalSources[id] = task.source.fileID
+                    activeTasks[task.source.fileID]?.remove(id)
+                }
             case .taskInterrupted(let task):
-                if let id = task.taskID { ensureTask(id); statuses[id] = .interrupted }
+                let active = activeTasks[task.source.fileID] ?? []
+                if let id = task.taskID ?? (active.count == 1 ? active.first : nil) {
+                    ensureTask(id); statuses[id] = .interrupted
+                    terminalSources[id] = task.source.fileID
+                    activeTasks[task.source.fileID]?.remove(id)
+                }
             case .configuredModel(let model): models[model.taskID] = model
             case .usageRecord(let record):
                 guard record.key.threadID == owningThreadID else { continue }
@@ -88,6 +127,10 @@ public struct SessionReducer {
                     && !record.taskID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                     && (try? record.usage.validated()) != nil
                 if let previous = ledger[record.key] {
+                    if let first = requestModels[record.key]?.model,
+                       let copy = models[record.taskID]?.model, first != copy {
+                        conflictingModels.insert(record.key)
+                    }
                     if !valid || !sameResponse(previous, record) {
                         ledger.removeValue(forKey: record.key)
                         quarantine.insert(record.key)
@@ -96,6 +139,11 @@ public struct SessionReducer {
                                                                byteOffset: record.source.byteOffset))
                     }
                 } else if valid {
+                    if activeTasks[record.source.fileID]?.contains(record.taskID) == true,
+                       let terminalSource = terminalSources[record.taskID], terminalSource != record.source.fileID {
+                        statuses[record.taskID] = .active
+                        terminalSources.removeValue(forKey: record.taskID)
+                    }
                     ledger[record.key] = record
                     order.append(record.key)
                     requestModels[record.key] = models[record.taskID]
@@ -120,7 +168,7 @@ public struct SessionReducer {
         let requests = records.map { record in
             ObservedRequest(key: record.key, usage: record.usage, taskID: record.taskID,
                 rootTaskID: record.rootTaskID, runtimeSessionID: record.runtimeSessionID,
-                timestamp: record.timestamp, source: record.source, configuredModel: requestModels[record.key],
+                timestamp: record.timestamp, source: record.source, configuredModel: conflictingModels.contains(record.key) ? nil : requestModels[record.key],
                 tools: tools.filter { $0.requestKey == record.key })
         }
         let tasks = taskOrder.map { id in

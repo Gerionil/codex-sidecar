@@ -15,6 +15,7 @@ struct Reconciliation {
         var invalid = degraded
         var sum = TokenUsage.zero
         var seen = Set<RequestKey>()
+        var latestNative: [String: UsageRecord] = [:]
         var checkpointSeed: TokenUsage?
         var legacySeen = false
         var missingCumulative = false
@@ -24,6 +25,11 @@ struct Reconciliation {
             case .usageSnapshot(let snapshot):
                 if let cumulative = snapshot.cumulative {
                     if seen.isEmpty { legacySeen = true; state.reportedCumulative = cumulative }
+                    else if let native = latestNative[snapshot.source.fileID],
+                            let reported = native.threadCumulative {
+                        if !reported.matchesReported(cumulative) { invalid = true }
+                        if cumulative.total == nil { missingCumulative = true }
+                    } else { missingCumulative = true }
                 }
             case .checkpoint(let checkpoint):
                 guard let record = checkpoint.latestUsageRecord,
@@ -44,7 +50,9 @@ struct Reconciliation {
                     } catch { invalid = true }
                 }
             case .usageRecord(let record):
-                guard trusted[record.key] != nil, seen.insert(record.key).inserted else { continue }
+                guard trusted[record.key] != nil else { continue }
+                latestNative[record.source.fileID] = record
+                guard seen.insert(record.key).inserted else { continue }
                 do { sum = try sum.adding(record.usage) } catch { invalid = true }
                 guard let cumulative = record.threadCumulative else {
                     missingCumulative = true
