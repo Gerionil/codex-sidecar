@@ -26,11 +26,12 @@ public struct DerivedSession: Equatable, Sendable {
     public let tasks: [DerivedTask]
     public let totals: TokenUsage
     public let cacheHitPercent: Double?
-    public let reconciliation: ReconciliationState
+    public internal(set) var reconciliation: ReconciliationState
     public let context: ContextState
     public let unattributedTools: [AssociatedTool]
     public let quarantinedKeys: [RequestKey]
-    public let diagnostics: [SanitizedDiagnostic]
+    public internal(set) var diagnostics: [SanitizedDiagnostic]
+    public internal(set) var sourceAvailability: SourceAvailability = .available
 }
 
 public struct SessionReducer {

@@ -181,6 +181,7 @@ public enum MetricEvent: Equatable, Sendable {
 public struct SanitizedDiagnostic: Equatable, Sendable {
     public enum Category: String, Sendable {
         case malformedRecord, invalidCounters, invalidIdentity, oversizedRecord
+        case incompleteRecord, sourceUnavailable
         case conflictingResponse, aggregateOverflow, missingTaskStart, ownershipAmbiguity, reconciliationBoundary, ambiguousTool
     }
     public let category: Category
