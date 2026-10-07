@@ -1,0 +1,6 @@
+{"type":"session_meta","payload":{"id":"11111111-1111-4111-8111-111111111111"}}
+{"type":"event_msg","payload":{"type":"task_started","turn_id":"task-a","model_context_window":1000}}
+{"type":"response_item","payload":{"type":"function_call","call_id":"call-a","name":"exec","namespace":"functions","arguments":"invented read search read ignored"}}
+{"type":"event_msg","payload":{"type":"task_complete","turn_id":"task-a"}}
+{"type":"event_msg","payload":{"type":"task_started","turn_id":"task-b","model_context_window":1000}}
+{"type":"token_usage_record","payload":{"thread_id":"11111111-1111-4111-8111-111111111111","turn_id":"task-b","response_id":"response-a","usage":{"input_tokens":100,"cached_input_tokens":60,"output_tokens":20,"reasoning_output_tokens":0,"cache_write_input_tokens":0,"total_tokens":120},"thread_token_usage":{"input_tokens":100,"cached_input_tokens":60,"output_tokens":20,"reasoning_output_tokens":0,"cache_write_input_tokens":0,"total_tokens":120}}}

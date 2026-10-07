@@ -181,6 +181,7 @@ public enum MetricEvent: Equatable, Sendable {
 public struct SanitizedDiagnostic: Equatable, Sendable {
     public enum Category: String, Sendable {
         case malformedRecord, invalidCounters, invalidIdentity, oversizedRecord
+        case conflictingResponse, aggregateOverflow, missingTaskStart, ownershipAmbiguity, reconciliationBoundary, ambiguousTool
     }
     public let category: Category
     public let line: Int64?
@@ -199,4 +200,49 @@ public struct SanitizedDiagnostic: Equatable, Sendable {
 public struct DecodeResult: Equatable, Sendable {
     public let event: MetricEvent?
     public let diagnostics: [SanitizedDiagnostic]
+}
+
+extension MetricEvent {
+    var source: SourcePosition? {
+        switch self {
+        case .header(let value): value.source
+        case .taskStarted(let value), .taskFinished(let value), .taskInterrupted(let value): value.source
+        case .configuredModel(let value): value.source
+        case .usageRecord(let value): value.source
+        case .usageSnapshot(let value): value.source
+        case .toolCall(let value): value.source
+        case .toolOutput(let value): value.source
+        case .checkpoint(let value): value.source
+        case .unknown: nil
+        }
+    }
+}
+
+extension TokenUsage {
+    static let zero = TokenUsage(input: 0, cachedInput: 0, cacheWriteInput: 0,
+                                 output: 0, reasoning: 0, total: 0)
+
+    /// Compare only reported fields, but never certify a missing observed counterpart.
+    func matchesReported(_ reported: TokenUsage) -> Bool {
+        zip(fields, reported.fields).allSatisfy { observed, reported in
+            reported == nil || observed == reported
+        }
+    }
+
+    var fields: [Int64?] { [input, cachedInput, cacheWriteInput, output, reasoning, total] }
+
+    func subtracting(_ other: TokenUsage) throws -> TokenUsage {
+        func difference(_ a: Int64?, _ b: Int64?) throws -> Int64? {
+            guard let a, let b else { return nil }
+            let (value, overflow) = a.subtractingReportingOverflow(b)
+            guard !overflow, value >= 0 else { throw CounterValidationError.inconsistentTotal }
+            return value
+        }
+        return try TokenUsage(input: difference(input, other.input),
+                              cachedInput: difference(cachedInput, other.cachedInput),
+                              cacheWriteInput: difference(cacheWriteInput, other.cacheWriteInput),
+                              output: difference(output, other.output),
+                              reasoning: difference(reasoning, other.reasoning),
+                              total: difference(total, other.total)).validated()
+    }
 }
