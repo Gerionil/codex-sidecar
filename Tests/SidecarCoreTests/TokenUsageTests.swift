@@ -55,4 +55,19 @@ final class TokenUsageTests: XCTestCase {
     func testSumRejectsInvalidOperands() {
         XCTAssertThrowsError(try TokenUsage(total: -1).adding(TokenUsage(total: 2)))
     }
+    func testPartialCountersCannotExceedExplicitTotal() {
+        for usage in [TokenUsage(input: 100, total: 1), TokenUsage(output: 100, total: 1),
+                      TokenUsage(cachedInput: 100, total: 1), TokenUsage(reasoning: 100, total: 1),
+                      TokenUsage(cachedInput: 60, reasoning: 5, total: 64)] {
+            XCTAssertThrowsError(try usage.validated())
+        }
+        XCTAssertNoThrow(try TokenUsage(input: 100, total: 120).validated())
+        XCTAssertNoThrow(try TokenUsage(cachedInput: 60, reasoning: 5, total: 65).validated())
+        XCTAssertNoThrow(try TokenUsage(total: 0).validated())
+    }
+
+    func testPartialSubsetLowerBoundOverflowFailsClosed() {
+        XCTAssertThrowsError(try TokenUsage(cachedInput: .max, reasoning: 1).validated())
+    }
+
 }

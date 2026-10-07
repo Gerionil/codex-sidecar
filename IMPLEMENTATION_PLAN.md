@@ -17,10 +17,9 @@ third-party runtime dependencies.
 
 **Spec:** [SPEC.md](SPEC.md), dated 2026-10-07.
 
-Status: **plan only**. No steps below have been executed. This session ends before
-application code, dependency installation, or scaffolding. The next session must
-read the specification and research first and obtain the owner's implementation
-instruction. A plan checkbox is not proof of a passing test.
+Status: **Stage 1 implemented**, with fresh test evidence in
+[docs/validation.md](docs/validation.md). Stages 2–6 have not started and require
+explicit owner instructions. A plan checkbox is not proof of a passing test.
 
 The owner approved macOS-first delivery and Swift/SwiftUI on 2026-10-07.
 Windows is a possible later phase, not a first-release deliverable. This updated
@@ -138,13 +137,13 @@ Define a decoder type `RolloutDecoder` exposing the shown `decodeLine` method.
 SourcePosition's initializer is `init(fileID: String, byteOffset: Int64)`.
 Fixture names below are extensionless arguments referring to `.jsonl` resources.
 
-- [ ] **Step 1: Confirm the build gate.** Check `swift --version` and
+- [x] **Step 1: Confirm the build gate.** Check `swift --version` and
   `xcrun --show-sdk-path`; record versions only. Create a Swift 6 library/test
   package with `.macOS(.v14)`, library/test targets only at this stage, and
   `.process("Fixtures")` resources. No remote dependencies. If the installed SDK
   cannot compile a core test, stop and report the precise build gate before UI
   work; do not silently install Xcode or change stack.
-- [ ] **Step 2: Write synthetic cases before decoder implementation.** Add
+- [x] **Step 2: Write synthetic cases before decoder implementation.** Add
   `native-two-requests.jsonl` using the invented identities/numbers in SPEC §9,
   with a header, one task, configured model `example-model`, a tool call, two
   native records and mirrored snapshots. Add `unknown-and-sensitive.jsonl`
@@ -152,7 +151,7 @@ Fixture names below are extensionless arguments referring to `.jsonl` resources.
   events and fields, plus a native usage record with that marker in an ignored
   extra field and the same invented 120-token usage as the first native record. Add `malformed.jsonl` with a bad complete JSON line followed
   by a valid record. Never transform a real local log into a fixture.
-- [ ] **Step 3: Pin tests for counters and discard behavior.** Example assertions:
+- [x] **Step 3: Pin tests for counters and discard behavior.** Example assertions:
 
 ```swift
 func testSelectiveDecoderKeepsUsageAndDropsText() throws {
@@ -178,13 +177,13 @@ func testSelectiveDecoderKeepsUsageAndDropsText() throws {
   reasoning > output, negative values, non-integral counters, contradictory total,
   Int64 overflow, absent required request IDs and unsupported envelopes. Invalid
   arithmetic yields a sanitized category; missing breakdown remains optional.
-- [ ] **Step 4: Run `swift test --filter RolloutDecoderTests` and
+- [x] **Step 4: Run `swift test --filter RolloutDecoderTests` and
   `swift test --filter TokenUsageTests`.** Record expected failure from missing
   decoder/validation, then implement minimal selective Decodable structures.
   Decode payloads by envelope/type; never keep a generic raw JSON tree as
   normalized state. Normalize schema variants only when tested. Re-run both
   filters and the full `swift test`; all must pass before stage 2.
-- [ ] **Step 5: Review the public fixture boundary.** Search fixtures for private
+- [x] **Step 5: Review the public fixture boundary.** Search fixtures for private
   paths/identities/text, confirm every value was authored synthetically, and list
   the validated native profile in `docs/validation.md`. Suggested local commit
   if a Git repository has been authorized/initialized: `test: establish synthetic

@@ -17,5 +17,5 @@ of ignored fields and error payloads.
 
 Resources describe the planned native rollout profile corresponding to the
 0.160.1 research. They do not establish live compatibility or completed accounting.
-The Stage 1 test build is currently blocked by missing XCTest in Command Line Tools;
-see `docs/validation.md` for the exact gate.
+The Stage 1 suite runs with the selected Xcode XCTest framework. See
+`docs/validation.md` for fresh results and the historical Command Line Tools gate.

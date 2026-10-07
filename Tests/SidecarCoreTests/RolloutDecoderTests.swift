@@ -188,4 +188,47 @@ final class RolloutDecoderTests: XCTestCase {
             with: #""usage":{"total_tokens":120},"thread_token_usage":{"total_tokens":-1}"#)
         XCTAssertEqual(decode(invalid).diagnostics.map(\.category), [.invalidCounters])
     }
+    func testOversizedRecordIsRejectedBeforeJSONDecode() {
+        let bytes = Data(repeating: 0x20, count: 8 * 1024 * 1024 + 1)
+        let result = RolloutDecoder().decodeLine(bytes, at: position)
+        XCTAssertNil(result.event)
+        XCTAssertEqual(result.diagnostics.map(\.category), [.oversizedRecord])
+    }
+
+    func testMissingTotalIsNotRecomputed() {
+        guard case .usageRecord(let usage) = decode(record(#"{"input_tokens":100,"output_tokens":20}"#)).event else {
+            return XCTFail("Expected optional total")
+        }
+        XCTAssertNil(usage.usage.total)
+        XCTAssertEqual(usage.usage.input, 100)
+    }
+
+    func testFractionalTimestampIsNormalizedWithoutRetainingRawText() {
+        let json = record().replacingOccurrences(of: "12:00:01Z", with: "12:00:01.123Z")
+        guard case .usageRecord(let record) = decode(json).event else { return XCTFail("Expected usage") }
+        XCTAssertNotNil(record.timestamp)
+        let invalid = json.replacingOccurrences(of: "2026-01-01T12:00:01.123Z", with: "PRIVATE_MARKER")
+        let result = decode(invalid)
+        XCTAssertNil(result.event)
+        XCTAssertFalse(String(describing: result).contains("PRIVATE_MARKER"))
+    }
+
+    func testInvalidSnapshotCountersAreRejected() {
+        let result = decode(#"{"type":"event_msg","payload":{"type":"token_count","info":{"last_token_usage":{"input_tokens":-1}}}}"#)
+        XCTAssertNil(result.event)
+        XCTAssertEqual(result.diagnostics.map(\.category), [.invalidCounters])
+    }
+
+    func testContradictoryPartialUsageIsQuarantined() {
+        for usage in [#"{"input_tokens":100,"total_tokens":1}"#,
+                      #"{"output_tokens":100,"input_tokens":null,"total_tokens":1}"#,
+                      #"{"cached_input_tokens":60,"total_tokens":59}"#,
+                      #"{"reasoning_output_tokens":5,"total_tokens":4}"#,
+                      #"{"cached_input_tokens":60,"reasoning_output_tokens":5,"total_tokens":64}"#] {
+            let result = decode(record(usage))
+            XCTAssertNil(result.event)
+            XCTAssertEqual(result.diagnostics.map(\.category), [.invalidCounters])
+        }
+    }
+
 }
