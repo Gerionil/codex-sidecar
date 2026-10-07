@@ -1,0 +1,21 @@
+{
+  "method": "account/rateLimits/updated",
+  "params": {
+    "rateLimits": {
+      "limitId": "codex",
+      "limitName": null,
+      "normalModelSlug": null,
+      "primary": {
+        "usedPercent": 26,
+        "windowDurationMins": 10080,
+        "resetsAt": 1800000000
+      },
+      "secondary": null,
+      "credits": null,
+      "individualLimit": null,
+      "spendControlReached": null,
+      "planType": null,
+      "rateLimitReachedType": null
+    }
+  }
+}

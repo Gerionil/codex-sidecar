@@ -1,0 +1,46 @@
+# Local machine metadata
+.DS_Store
+.AppleDouble
+Thumbs.db
+
+# Secrets and machine-specific settings
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+/.codex/
+/.local/
+/local-data/
+/private-data/
+/credentials/
+
+# Real session captures, private research, and generated exports
+/real-sessions/
+/session-captures/
+/exports/
+/work/
+*.log
+
+# Potential desktop stacks; final stack is selected after research
+node_modules/
+dist/
+build/
+coverage/
+target/
+.build/
+.swiftpm/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+
+# Temporary/editor files
+.idea/
+.playwright-mcp/
+*.tmp
+*.swp
+*~
+
+# Do not ignore all JSONL files: synthetic test fixtures should be tracked.
+# Keep dependency lockfiles tracked.
