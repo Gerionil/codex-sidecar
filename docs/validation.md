@@ -1,5 +1,137 @@
 # Validation record
 
+## 2026-10-07 — Stage 2 implementation
+
+**Latest status: Stages 1 and 2 implemented. Stage 3 has not started.**
+
+Started `stage/2-session-model` from the clean current `main` at `51cb518`.
+Stage 1's 29 tests remain passing. All new resources were authored synthetically;
+no real rollout, credentials, account identifier, prompt or tool payload was read
+or copied. No inference, installation, file discovery/reader, UI, quota process,
+push, merge, publication or branch deletion occurred.
+
+### Deliverables and accounting boundary
+
+- Pure deterministic `SessionReducer.reduce(_:owningThreadID:)`, immutable
+  Sendable `DerivedSession`, `ObservedRequest` and task snapshots.
+- Initial header ownership is locked per logical source. Later inherited headers
+  cannot change it. Foreign usage is excluded from the owned ledger, while foreign
+  native boundaries still prevent unsafe tool association. Unidentified sources
+  cannot authorize exact accounting.
+- Deduplicate by owned thread/response key. Distinct IDs with equal usage count
+  separately. Conflicting usage, task or cumulative values retract and quarantine
+  that key, with sanitized diagnostics and degraded reconciliation. Source offset,
+  timestamp and runtime session ID are provenance, not request identities.
+- Optional-field checked aggregation preserves unavailable breakdowns. Cache rate
+  uses the same validated request set; zero input or missing input/cache makes it
+  unavailable. Aggregate overflow makes totals unavailable and degrades coverage,
+  preserving the valid individual rows. Empty ledgers expose unavailable totals.
+- `Reconciliation` keeps observed sums, inferred baseline and native reported
+  cumulative separate. Positive baseline and legacy/native transitions are partial
+  history; reset, component disagreement, conflicting ID and exceptional snapshot
+  disagreement cannot certify continuity. Missing cumulative total is incomplete
+  coverage. No balancing requests or positive-clamped billing deltas are created.
+- Checkpoints can seed a reported baseline or corroborate their own native
+  response boundary. They never create rows or reset observed totals. A checkpoint
+  without a native ledger exposes reported partial history, not an exact timeline.
+  Without native records, the latest legacy snapshot is unverified reported usage,
+  including after a decrease/reset.
+- `ToolAssociator` deduplicates function/custom calls, updates late output status,
+  and associates only by validated single-task order segments. Unmatched output,
+  orphan, conflicting call metadata, task/compaction boundaries, concurrent tasks
+  and copies disagreeing on order preserve ambiguity. `functions.exec` remains
+  one invocation; arguments and inner operations are not parsed. Tools never
+  create requests or token charges.
+- `ContextState` separates configured model, source/task-bound advertised window,
+  timestamped last native footprint and its historical state. It exposes explicit
+  window provenance and historical configured-model state. Exact current context
+  is always unavailable. Changed model/window, interruption and compaction cannot
+  revive an old footprint; fresh native usage and a matching window snapshot can
+  recover the last-request ratio. Concurrent unscoped snapshots cannot assign a
+  window. Conflicting configured labels across source copies are unavailable,
+  including duplicate request attribution affected by that conflict.
+- Exact source copies and strictly matching older prefixes are suppressed before
+  lifecycle/context replay. Differing evidence is retained conservatively: an
+  older start from another source cannot reopen a completed task until a fresh
+  unique response provides evidence. Taskless terminal events can target only a
+  single active task. Requests preserve stream order, without timestamp sorting.
+- `Fixture.events(_:)` uses Stage 1 decoding and rejects unexpected fixture
+  diagnostics. All added JSONL resources use invented identities and counters.
+
+### Test-first and independent review evidence
+
+The four focused test classes were written before implementation. Initial runs
+first failed for missing Stage 2 types, then all four failed against compilable
+empty reducers. Subsequent boundary regressions were observed RED before their
+corrections, including legacy/native zero-baseline transition, foreign tool
+boundary, changed window freshness, copied checkpoints, concurrent window scope,
+post-compaction recovery, stale prefix lifecycle/context, differing source metadata
+and exceptional context-full snapshots. The empty-cumulative regression was also
+verified RED with its correction temporarily removed, then restored and passed.
+
+A separate fresh-context reviewer inspected the complete Stage 2 implementation
+and independently reproduced synthetic failures. Important findings were fixed
+with regression tests:
+
+| Finding | Regression evidence |
+| --- | --- |
+| Historical copied checkpoint compared with final global sum | `testCopiedCompactionStreamDoesNotDegradeReconciliation` |
+| Empty cumulative object incorrectly certified coverage | `testEmptyCumulativeCannotCertifyFullCoverage` |
+| Fresh post-compaction capacity could not restore ratio | `testFreshNativeAndMatchingWindowSnapshotRecoverAfterCompaction` |
+| Concurrent snapshot mixed model/window task scopes | `testConcurrentSnapshotCannotAssignCapacityToLatestRequest` |
+| Older prefix reopened completed task or restored older model/window | `testOlderPrefixCopyDoesNotReopenCompletedTask`, `testOlderPrefixCopyDoesNotReplaceLatestTaskContext` |
+| Differing-window prefix reopened task and looked fresh; conflicting model chosen | `testDifferingWindowCopyCannotReopenCompletedTask`, `testDifferingWindowCopyInvalidatesOldFootprint`, `testDifferingModelCopiesDoNotChooseConfiguredAttribution` |
+
+Final independent review: all reported important findings closed; **82 tests,
+zero failures**, independently rerun. No confirmed remaining blocking correctness
+finding. Review used repository fixtures and temporary synthetic probes only.
+
+### Fresh final verification
+
+Apple Swift 6.4 (`swiftlang-6.4.0.34.1`), macOS SDK 27.0, arm64 development host.
+Compiler-cache access required running the local Swift tests outside the filesystem
+sandbox; no toolchain installation or developer setting change was made.
+
+| Command/check | Result |
+| --- | --- |
+| `swift test --filter SessionReducerTests` | PASS: 14 tests, 0 failures |
+| `swift test --filter ReconciliationTests` | PASS: 16 tests, 0 failures |
+| `swift test --filter ToolAssociatorTests` | PASS: 10 tests, 0 failures |
+| `swift test --filter ContextStateTests` | PASS: 13 tests, 0 failures |
+| `swift test` | PASS: 82 tests, 0 failures (29 Stage 1 + 53 Stage 2) |
+| `git diff --check` | PASS |
+| Source/test privacy-pattern scan | No private path, credential file/token/key markers found |
+| Dependency and scope inspection | No remote dependency, reader, executable/UI target or quota implementation added |
+
+### A2–A7 coverage
+
+| Acceptance | Stage 2 synthetic evidence and limits |
+| --- | --- |
+| A2 | SPEC example: total 180, input 150, cached 100, output 30, reasoning 7, cache rate 66.6667%; explicit zero, partial breakdown and checked aggregate overflow. Stage 1 retains invalid/negative/subset/overflow decoding checks. |
+| A3 | Same-stream replay, duplicate logical sources, resume replay, identical older prefixes, repeated snapshots/checkpoints and equal-valued distinct IDs. Archive-like logical copies are covered; actual filesystem moves/replacement are Stage 3. |
+| A4 | Conflict quarantine/retraction, locked initial ownership, foreign inherited usage exclusion, unidentifiable source rejection, positive baseline, reset, component disagreement, missing/empty cumulative, legacy/native transition and exceptional snapshots. |
+| A5 | Two requests in one task, multiple task contexts, interrupted activity without usage, missing-start incomplete group, taskless single-active completion/interruption, older copy cannot reopen terminal task. |
+| A6 | Function/custom calls, duplicate completed mirrors, late output, output-before-call, orphan/cross-task/concurrent activity, foreign native boundary, conflicting metadata and differing copy order. Inner orchestration operations remain discarded. |
+| A7 | Source/task window provenance, configured model rather than actual model, unavailable exact occupancy, native footprint, stale compaction/interruption/model/window state, fresh matching recovery, concurrent snapshot scope, old prefixes and conflicting model/window copies. |
+
+### Remaining limitations and next gate
+
+This acceptance covers normalized synthetic replay only. JSONL internal profile
+compatibility remains limited to the Stage 1 selective schema; it is not live
+runtime certification. Decode diagnostics must be propagated by the future reader;
+`Fixture.events` intentionally rejects malformed fixture input instead of hiding
+those diagnostics. Source disappearance/replacement and stream rebuilding, file
+ordering/discovery, performance, UI labeling, live quota behavior and live numeric
+acceptance remain later-stage checks. macOS 14 and Intel runtime support are not
+exercised. Conflicted/unknown metadata may conservatively remain unavailable.
+
+Exact current context, actual fallback/compaction model attribution, attempted
+requests without native usage, individual tool costs and family-wide totals remain
+unavailable by design. No Stage 3–6 completion is claimed. Stop here for owner
+acceptance; do not push or merge the Stage 2 branch.
+
+The records below are historical earlier-stage evidence.
+
 ## 2026-10-07 — Stage 1 implementation
 
 **Status: Stage 1 implemented and tests passing. Stage 2 has not started.**

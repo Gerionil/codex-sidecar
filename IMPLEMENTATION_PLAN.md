@@ -17,8 +17,8 @@ third-party runtime dependencies.
 
 **Spec:** [SPEC.md](SPEC.md), dated 2026-10-07.
 
-Status: **Stage 1 implemented**, with fresh test evidence in
-[docs/validation.md](docs/validation.md). Stages 2–6 have not started and require
+Status: **Stages 1 and 2 implemented**, with fresh test evidence in
+[docs/validation.md](docs/validation.md). Stages 3–6 have not started and require
 explicit owner instructions. A plan checkbox is not proof of a passing test.
 
 The owner approved macOS-first delivery and Swift/SwiftUI on 2026-10-07.
@@ -214,7 +214,7 @@ struct SessionReducer {
 // DerivedSession and ObservedRequest match the file-map contract above.
 ```
 
-- [ ] **Step 1: Write failing dedupe/accounting tests.** Core example:
+- [x] **Step 1: Write failing dedupe/accounting tests.** Core example:
 
 ```swift
 func testNativeRequestsStayDistinctFromTaskAndSnapshots() throws {
@@ -241,7 +241,7 @@ func testNativeRequestsStayDistinctFromTaskAndSnapshots() throws {
   Conflicting ID must quarantine that request and degrade reconciliation; a
   missing task start creates an incomplete task group without discarding valid
   owned response usage. Equal-valued IDs must both count.
-- [ ] **Step 2: Write failing epoch/coverage tests.** Add `positive-baseline`
+- [x] **Step 2: Write failing epoch/coverage tests.** Add `positive-baseline`
   (first request 120, reported cumulative 620 → observed 120, earlier baseline
   500, partial history), `native-counter-reset`, `legacy-only`,
   `legacy-to-native`, `resume-replay`, `compaction-checkpoint`, and
@@ -249,7 +249,7 @@ func testNativeRequestsStayDistinctFromTaskAndSnapshots() throws {
   never create a native row, native sums do not reset at compaction, a counter
   decrease invalidates continuity, and source-reported total remains separate.
   Replaying the same checkpoint must not change observed totals.
-- [ ] **Step 3: Write failing tool/context tests.** Add `tools-ordered`,
+- [x] **Step 3: Write failing tool/context tests.** Add `tools-ordered`,
   `tools-orphaned`, `tools-late-output`, `tools-task-boundary`, `tools-concurrent`,
   `model-window-change`, and `interrupted-no-usage`. Use invented call IDs; same
   call in response_item/item_completed counts once. A late output updates its
@@ -257,13 +257,13 @@ func testNativeRequestsStayDistinctFromTaskAndSnapshots() throws {
   `functions.exec` remains one tool, even when its ignored synthetic input text
   mentions several reads. Exact current occupancy is unavailable throughout;
   a model change without window must not reuse the prior window.
-- [ ] **Step 4: Run the four named test classes and observe failures.** Implement
+- [x] **Step 4: Run the four named test classes and observe failures.** Implement
   owned-key dictionary reduction, conflict quarantine/retraction, checked sums,
   optional-field aggregate propagation, continuous-epoch reconciliation, and
   order-segment tool association. Use native record boundaries only for request
   rows; configured model is a labeled task context. Re-run `swift test` until
   stage scenarios pass. Do not “fix” missing fixtures by inserting zero values.
-- [ ] **Step 5: Review invariant coverage and record results.** Verify A2–A7
+- [x] **Step 5: Review invariant coverage and record results.** Verify A2–A7
   explicitly in `docs/validation.md`. Suggested local commit:
   `feat: reconstruct owned completed model requests`.
 
