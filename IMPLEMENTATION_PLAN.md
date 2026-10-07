@@ -17,8 +17,8 @@ third-party runtime dependencies.
 
 **Spec:** [SPEC.md](SPEC.md), dated 2026-10-07.
 
-Status: **Stages 1 and 2 implemented**, with fresh test evidence in
-[docs/validation.md](docs/validation.md). Stages 3–6 have not started and require
+Status: **Stages 1, 2 and 3 implemented**, with fresh test evidence in
+[docs/validation.md](docs/validation.md). Stages 4–6 have not started and require
 explicit owner instructions. A plan checkbox is not proof of a passing test.
 
 The owner approved macOS-first delivery and Swift/SwiftUI on 2026-10-07.
@@ -310,20 +310,20 @@ actor SessionReader {
   LineFramer additionally exposes sanitized oversized-line diagnostics. Session
   descriptors retain local URLs for reads only, not diagnostic/log export.
 
-- [ ] **Step 1: Write byte-framing tests.** Split a synthetic record at every
+- [x] **Step 1: Write byte-framing tests.** Split a synthetic record at every
   byte offset and split a multibyte UTF-8 character; assert one identical decode
   after newline. Test CRLF, multiple complete lines, empty lines, incomplete EOF,
   malformed complete line followed by valid data, and >8 MiB line dropped to
   newline with bounded buffering. Use generated synthetic data for oversized
   cases rather than committing megabytes of fixtures.
-- [ ] **Step 2: Write temporary-directory discovery tests.** Use test-owned
+- [x] **Step 2: Write temporary-directory discovery tests.** Use test-owned
   directories for explicit root/env/default precedence, archived directory
   absent/present, unreadable root, symlink escape, duplicate headers/files,
   child/root provenance, and newest-child vs root ordering. No test reads the
   real home. Assert an existing pinned root remains selected when a newer child
   or concurrent root appears. Equal recent timestamps do not pretend foreground
   identity. Rename a source from sessions to archive and discover one session.
-- [ ] **Step 3: Write incremental/rebuild tests.** Example:
+- [x] **Step 3: Write incremental/rebuild tests.** Example:
 
 ```swift
 func testChunkedReadEqualsWholeReplay() throws {
@@ -353,14 +353,14 @@ func testChunkedReadEqualsWholeReplay() throws {
   deletion while selected, archive move, duplicate file, restart rebuild and
   selection switch while a read is pending. Obsolete selected-session updates
   must never appear in the new selection.
-- [ ] **Step 4: Run these tests and observe failures, then implement.** Open source
+- [x] **Step 4: Run these tests and observe failures, then implement.** Open source
   handles read-only, frame before decoding, and read ≤64 KiB chunks off UI actor.
   Maintain file identity/offset/buffer and sanitized diagnostics. Watchers are
   hints; 1-second selected-file stat and 5-second catalog reconciliation recover
   missed signals. For replacement/truncation rebuild the affected contribution
   from current originals and re-derive; never add old and replacement totals.
   Discard an asynchronous result if selection generation changed.
-- [ ] **Step 5: Run `swift test` and synthetic latency check.** Generate 10,000
+- [x] **Step 5: Run `swift test` and synthetic latency check.** Generate 10,000
   owned request records in a temporary file; measure parse/replay and bounded
   append detection with injected timers or an explicit integration harness.
   Confirm 2-second append and 6-second discovery targets on idle test host,

@@ -1,5 +1,173 @@
 # Validation record
 
+## 2026-10-07 — Stage 3 implementation
+
+**Latest status: Stages 1, 2 and 3 implemented. Stages 4–6 have not started.**
+
+Started `stage/3-session-reader` from clean local `main` at `3673971` after
+Stages 1 and 2 were accepted and merged. Existing branches were retained. All
+Stage 3 input was authored synthetically in test-owned temporary directories;
+no real Codex home, logs, configuration, credentials or source contents were read
+or copied. No inference, installation, UI, quota provider, push, merge,
+publication or branch deletion occurred.
+
+### Deliverables and interfaces
+
+- `LineFramer.append(_:)` and `reset()`: newline framing before UTF-8/JSON decode,
+  CRLF normalization, empty records, persistent incomplete EOF, byte offsets and
+  sanitized oversized diagnostics. At most 8 MiB is buffered for one line;
+  oversized input is discarded through its newline. Diagnostics are aggregated,
+  without payloads, and can be drained into the reader.
+- Sendable `SessionDescriptor` retains local source URLs for reads, logical ID,
+  project basename, CLI version, modification-time activity and parent provenance.
+  Conflicting parent/root copies expose `provenanceAmbiguous` and cannot become a
+  recent-root suggestion. Roots precede children; stable ID ordering breaks list
+  ties without inventing foreground identity.
+- `SessionCatalog.discover(root:)`, `sessions(root:)` and `stop()`: bounded initial
+  header discovery, optional archives, duplicate logical-source grouping and
+  explicit available/missing/unreadable/partial status. Root resolution is a pure
+  helper receiving override, environment and user-home values; tests inject all
+  three. It does not inspect configuration or credentials.
+- `SessionReader.select(_:)`, `refresh()`, `snapshots()` and `stop()`: read-only
+  background workers, per-source offset/framer/normalized contribution, inode and
+  nanosecond metadata checks, immutable externally readable derived snapshots,
+  cancellation and latest-only bounded AsyncStream subscriptions. Only complete
+  lines pass through Stage 1; Stage 2 performs all accounting and reduction.
+  Supplied `root` enables selected-session archive/duplicate reconciliation.
+- `SessionSelection` keeps `pinnedID` separately from `mostRecentSuggestion` and
+  equally recent root candidates. New children, concurrent roots, missing activity
+  and source deletion cannot change the manual pin.
+- Filesystem hints are optional accelerators. Selected-file stat checks run every
+  1 second, catalog reconciliation every 5 seconds, on provider actors/workers.
+  Each source read or integrity-check chunk is at most 64 KiB. Read loops consume
+  only the statted extent, so a continuously appending writer cannot extend a
+  single read indefinitely. Concurrent mutation fails closed and retries later.
+- Source reads traverse directory descriptors with `openat`, `O_DIRECTORY` and
+  `O_NOFOLLOW`, then open regular files with `O_RDONLY`. Every parent is pinned
+  against symlink substitution; special files are rejected. Watch descriptors
+  use `O_EVTONLY`; owned read handles close with `defer`, watcher cancellation
+  closes owned descriptors, and `stop()` awaits outstanding owned read/scan jobs.
+- Shrink, inode replacement, equal-size metadata changes and a changed previously
+  read prefix rebuild that source contribution. Before treating growth as append,
+  streaming SHA-256 verifies the entire prior extent; only digests survive these
+  transient reads. Apple's system CryptoKit adds no third-party dependency.
+  Old and replacement totals are never added together.
+- Read/selection generations, source revisions and ordered/coalesced catalog
+  requests reject obsolete results. Explicit refresh/reconciliation waits for its
+  current work; cancelled catalog callers cannot wedge subsequent refreshes.
+  Last-subscriber termination stops workers, and explicit stop finishes streams.
+- Decode/framing gaps, incomplete EOF and unavailable sources propagate sanitized
+  diagnostics, partial/unavailable source availability and degraded reconciliation.
+  Valid observed rows remain available; missing breakdown and cache rate remain
+  unknown. Completing an otherwise clean partial line can restore coverage. A
+  malformed/unknown/oversized first record cannot authorize a later header.
+  Exact current context remains unavailable.
+
+### Test-first and independent review evidence
+
+The four planned test classes and synthetic filesystem utility were written before
+production components. The initial build reached missing Stage 3 types after
+compiler-cache access was allowed. Behavioral RED runs subsequently reproduced
+refresh returning before an existing watcher read finished and source-ID collision
+when a new file sorted before an already cached source; both became GREEN.
+Initial test URL comparisons were corrected for macOS temporary-path aliases;
+tests now create directories first and use their physical canonical paths.
+
+One independent fresh-context reviewer examined the complete implementation and
+independently reran the initial 107-test suite. It found four important classes of
+failure. Author-owned synthetic regression tests reproduced these before fixes:
+
+| Important finding | RED → GREEN regression |
+| --- | --- |
+| Growing interior rewrite kept a removed request and missed a response conflict | `testInteriorRewriteWithGrowthRebuildsAndQuarantinesConflict` |
+| Unknown/oversized first record permitted later header ownership | `testReplacementMustStartWithOwningHeader`, `testOversizedInitialHeaderCannotAuthorizeLaterHeader`, `testOversizedFirstRecordCannotDiscoverLaterHeader` |
+| Obsolete catalog scan replaced a newer root status; concurrent scans lacked ordering | `testObsoleteCatalogScanCannotOverwriteNewRootStatus`, `testOlderConcurrentDiscoveryCannotChangeNewerStatus`; generations/request ordering guard status and publication, reader catalog requests coalesce |
+| Parent symlink substitution between path check and open escaped discovery roots | `testSourceOpenRejectsParentSymlinkRaces`: original implementation read outside the test root 363 times in 4,000 attempts; descriptor traversal now reads none while still opening legitimate sources |
+
+Additional RED → GREEN checks cover cancelled catalog callers wedging refresh,
+explicit partial source availability after malformed/oversized input, and conflicting
+root/child provenance. The concurrent-discovery test was additionally observed RED with its request-order
+guard temporarily removed, then GREEN with it restored. Selection generation is
+checked both in the final snapshot and in every observed AsyncStream update.
+Root-before-child ordering was also corrected as an existing
+Stage 3 specification requirement. No second review is claimed: fixes were verified
+by the regression tests and final full suite.
+
+Task ledger: framing/selection `bb91c65`; catalog/safe traversal `ed21edb`;
+reader/rebuild/diagnostics `bf6cc6b`; final verification below. No implementation
+scope ruling changes the accounting contract. Final deferred minor: unchanged stat
+refresh still re-runs the normalized reducer (the reviewer measured approximately
+0.150 seconds for 10,000 requests before the fix pass); snapshot reuse is a future
+optimization. This does not reparse unchanged bodies or block the main actor.
+
+### Fresh final verification
+
+Apple Swift 6.4 (`swiftlang-6.4.0.34.1`), macOS SDK 27.0, arm64 macOS 27.0.1 host.
+Local compiler-cache access required sandbox escalation; no installation or developer
+setting change occurred. Current Swift AsyncStream/cancellation and Apple CryptoKit
+incremental-hashing documentation was consulted through Context7. No source from
+another project was copied.
+
+| Check | Result |
+| --- | --- |
+| `swift test --filter LineFramerTests` | PASS: 4 tests, 0 failures |
+| `swift test --filter SessionCatalogTests` | PASS: 11 tests, 0 failures |
+| `swift test --filter SessionReaderTests` | PASS: 19 tests, 0 failures |
+| `swift test --filter SessionSelectionTests` | PASS: 2 tests, 0 failures |
+| `swift test` | PASS: 118 tests, 0 failures (82 retained + 36 Stage 3) |
+| Main-actor heartbeat during background 10,000-request replay | PASS; progress continues during provider work, not native UI acceptance |
+| Whitespace/privacy/scope checks | PASS; no private captures or third-party runtime dependencies introduced |
+
+### Measured filesystem behavior
+
+The final full-suite run generated a **2,097,998-byte, 10,000-request** temporary
+JSONL stream containing invented IDs, one-token completed responses and optional
+breakdowns. The tests performed actual filesystem writes/reads and real elapsed
+wall-time measurement in the debug build. Watcher hints were disabled for the
+append/discovery measurements; the discovered file also contains the complete
+10,000-request stream. These exercise production fallback intervals.
+There are **no simulated timer measurements** presented as filesystem evidence.
+
+| Measurement | Final full-suite result | Target / interpretation |
+| --- | --- | --- |
+| Initial parse/replay and reduction | 0.210 s | 10,000 requests; totals and optional counters checked |
+| Appended complete request visibility | 0.980 s | PASS: ≤2 s through 1-second stat fallback |
+| New nested session discovery | 5.100 s | PASS: ≤6 s through 5-second catalog reconciliation |
+| Cancellation after a pending read had 20 ms to start | 0.000886 s | Responsive on this host; no cross-platform cancellation guarantee |
+| Stop after appended state | 0.000423 s | Streams/workers stopped, outstanding owned work awaited |
+
+Both latency targets held in this final run. These are bounded measurements on
+this host under normal development load, not worst-case guarantees. Large-source
+integrity revalidation and reduction costs can increase latency; unmet targets on
+other hosts must be reported rather than inferred from this result.
+
+### A1, A3, A10 and A11 coverage
+
+| Acceptance | Stage 3 evidence and remaining boundary |
+| --- | --- |
+| A1 | Injected root precedence; empty/missing/unreadable roots and subdirectories; optional archives; duplicate logical sessions; symlink skips and racing parent substitution; root/child order and ambiguous provenance/activity; manual pin survives newer children/concurrent roots and deletion. Actual GUI/settings acceptance remains Stage 5. |
+| A3 | Filesystem replay equals Stage 2's 180-token fixture; append, duplicate sources, archive move, conflicting copies, restart rebuild, distinct source identity and replacement contribution retraction. Stage 2 replay/snapshot/checkpoint invariants remain passing. |
+| A10 | Every-byte and split multibyte framing, CRLF, empty records, incomplete EOF/completion, malformed-line recovery, >8 MiB discard/recovery with bounded buffer, honest parser diagnostics, invalid initial ownership, truncation, atomic/in-place equal-size replacement and interior rewrite with growth. No raw text/path diagnostics. |
+| A11 | Actual synthetic 10,000-request parse/append/discovery/cancellation measurements, background main-actor heartbeat, stream termination and worker stop, selection generation rejection, obsolete catalog status regression and cancelled-caller recovery. No native UI or quota-process responsiveness/quit acceptance is claimed. |
+
+### Remaining limitations and stop boundary
+
+Only synthetic filesystem/core acceptance is complete. No real installed-profile
+rollout acceptance, UI, quota process or live inference was performed. macOS 14,
+Intel, other filesystems, exceptional sustained-write/load behavior and native UI
+acceptance remain unverified. Filesystem ordering/symlink races have bounded
+regression coverage, not an exhaustive adversarial scheduler proof. Unknown future
+JSONL schemas remain outside the validated profile. Metadata and metrics have no
+persistent database; source loss removes unavailable contributions rather than
+pretending durable lifetime history.
+
+Exact current context, actual fallback-model attribution, unreported attempts,
+per-tool costs and family totals remain unavailable. Only Stage 3 status/checklists
+were advanced. Stop before Stage 4; local commits require separate owner approval
+for any later push or merge.
+
+The following records are historical earlier-stage evidence.
+
 ## 2026-10-07 — Stage 2 implementation
 
 **Latest status: Stages 1 and 2 implemented. Stage 3 has not started.**
