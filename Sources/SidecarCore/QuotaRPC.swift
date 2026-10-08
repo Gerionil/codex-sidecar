@@ -67,6 +67,9 @@ final class ProcessQuotaWire: QuotaWire, @unchecked Sendable {
     private var input: FileHandle?
     private var sources: [DispatchSourceRead] = []
     private var ended = false
+    private var writer: DispatchSourceWrite?
+    private struct WriteJob { var bytes: Data; var offset = 0; let completion: CheckedContinuation<Void, Error> }
+    private var writes: [WriteJob] = []
     init(_ config: QuotaProcessConfiguration) {
         self.config = config
         (events, continuation) = AsyncStream.makeStream(bufferingPolicy: .bufferingOldest(64))
@@ -88,6 +91,9 @@ final class ProcessQuotaWire: QuotaWire, @unchecked Sendable {
                 }
                 do {
                     try p.run(); process = p; input = stdin.fileHandleForWriting
+                    let fd = stdin.fileHandleForWriting.fileDescriptor
+                    _ = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK)
+                    _ = fcntl(fd, F_SETNOSIGPIPE, 1)
                     drain(stdout.fileHandleForReading, stdout: true)
                     drain(stderr.fileHandleForReading, stdout: false)
                     c.resume()
@@ -124,16 +130,47 @@ final class ProcessQuotaWire: QuotaWire, @unchecked Sendable {
         try await withCheckedThrowingContinuation { (c: CheckedContinuation<Void, Error>) in
             queue.async { [self] in
                 guard !ended, let input, process?.isRunning == true else { c.resume(throwing: QuotaFailure.processExited); return }
-                do { try input.write(contentsOf: bytes); c.resume() }
-                catch { c.resume(throwing: QuotaFailure.processExited) }
+                guard bytes.count <= 1024, writes.count < 32 else { c.resume(throwing: QuotaFailure.malformedReply); return }
+                writes.append(.init(bytes: bytes, completion: c))
+                flushWrites(fd: input.fileDescriptor)
             }
         }
+    }
+    private func flushWrites(fd: Int32) {
+        guard !ended else { return }
+        while !writes.isEmpty {
+            let job = writes[0]
+            let n = job.bytes.withUnsafeBytes { pointer in
+                Darwin.write(fd, pointer.baseAddress!.advanced(by: job.offset), job.bytes.count - job.offset)
+            }
+            if n > 0 {
+                writes[0].offset += n
+                if writes[0].offset == writes[0].bytes.count { writes.removeFirst().completion.resume() }
+            } else if n < 0, errno == EINTR { continue }
+            else if n < 0, errno == EAGAIN || errno == EWOULDBLOCK {
+                if writer == nil {
+                    let source = DispatchSource.makeWriteSource(fileDescriptor: fd, queue: queue)
+                    source.setEventHandler { [weak self] in self?.flushWrites(fd: fd) }
+                    writer = source; source.resume()
+                }
+                return
+            } else {
+                failWrites(.processExited); return
+            }
+        }
+        writer?.cancel(); writer = nil
+    }
+    private func failWrites(_ reason: QuotaFailure) {
+        writer?.cancel(); writer = nil
+        let pending = writes; writes.removeAll()
+        for job in pending { job.completion.resume(throwing: reason) }
     }
     func stop() async {
         await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
             queue.async { [self] in
                 if ended { c.resume(); return }
                 ended = true
+                failWrites(.stopped)
                 try? input?.close(); input = nil
                 for source in sources { source.cancel() }; sources.removeAll()
                 let owned = process; process = nil
@@ -152,6 +189,8 @@ final class ProcessQuotaWire: QuotaWire, @unchecked Sendable {
         }
     }
     deinit {
+        writer?.cancel()
+        for job in writes { job.completion.resume(throwing: QuotaFailure.stopped) }
         for source in sources { source.cancel() }
         try? input?.close()
         if let process, process.isRunning { process.terminate() }
@@ -170,6 +209,7 @@ public actor QuotaRPC: QuotaTransport {
     private var stopped = false
     private var nextID = 0
     private var buffer = Data()
+    private var accountHintPending = false
     private struct Pending { let continuation: CheckedContinuation<Data, Error>; let timer: Task<Void, Never> }
     private var pending: [Int: Pending] = [:]
     public init(configuration: QuotaProcessConfiguration, scheduler: any QuotaScheduler = SystemQuotaScheduler()) {
@@ -183,6 +223,7 @@ public actor QuotaRPC: QuotaTransport {
     public nonisolated func notifications() -> AsyncStream<Data> { notificationStream }
     public func request(method: String, params: Data?) async throws -> Data {
         let value = try Self.allowedParams(method, params)
+        if method == "account/read" { accountHintPending = false }
         guard !stopped else { throw QuotaFailure.stopped }
         if !started {
             if starting == nil {
@@ -255,13 +296,14 @@ public actor QuotaRPC: QuotaTransport {
         let packet = try QuotaDecoder.dictionary(line)
         if let method = packet["method"] as? String {
             if let id = packet["id"], !(id is NSNull) {
-                guard id is String || QuotaDecoder.integer(id) != nil else { throw QuotaFailure.malformedReply }
+                guard (id as? String).map({ $0.utf8.count <= 256 }) == true || QuotaDecoder.integer(id) != nil else { throw QuotaFailure.malformedReply }
                 let response: [String: Any] = ["id": id, "error": ["code": -32601, "message": "Unsupported method"]]
                 var data = try JSONSerialization.data(withJSONObject: response); data.append(10)
                 try await wire.write(data)
             } else if method == "account/rateLimits/updated" || method == "account/updated" {
                 // Only method survives: notification payloads are refresh hints, not cache/account values.
-                notificationContinuation.yield(try JSONSerialization.data(withJSONObject: ["method": method]))
+                if method == "account/updated" { accountHintPending = true }
+                notificationContinuation.yield(try JSONSerialization.data(withJSONObject: ["method": accountHintPending ? "account/updated" : method]))
             }
             return
         }

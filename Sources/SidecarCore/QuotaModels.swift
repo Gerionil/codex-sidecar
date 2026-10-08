@@ -112,8 +112,8 @@ public struct QuotaDecoder {
         return n.doubleValue
     }
     static func integer(_ value: Any?) -> Int64? {
-        guard let n = number(value), n.rounded(.towardZero) == n, n >= Double(Int64.min), n < Double(Int64.max) else { return nil }
-        return Int64(n)
+        guard let n = value as? NSNumber, CFGetTypeID(n) != CFBooleanGetTypeID() else { return nil }
+        return Int64(n.stringValue)
     }
     static func boolean(_ value: Any?) -> Bool? {
         guard let n = value as? NSNumber, CFGetTypeID(n) == CFBooleanGetTypeID() else { return nil }

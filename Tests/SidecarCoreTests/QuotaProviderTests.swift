@@ -175,18 +175,17 @@ final class QuotaProviderTests: XCTestCase, @unchecked Sendable {
 }
 
 extension QuotaProviderTests {
-    func testNotificationAccountChangeClearsGoodStateAndRestartsOwnedTransport() async throws {
-        let clock = QuotaTestClock()
-        let old = QuotaTransportFake(quota: try Fixture.data("weekly-only", ext: "json"))
-        let new = QuotaTransportFake(quota: try Fixture.data("empty-map", ext: "json"))
-        await new.configure(hold: true)
-        let factory = QuotaFactoryFake([old, new])
-        let p = QuotaProvider(scheduler: clock, transportFactory: { try await factory.make() })
-        await p.start(); await old.hint("account/updated")
-        await quotaEventually { await new.waiting != nil }
+    func testNotificationAccountChangeClearsGoodStateAndCoalescesRefresh() async throws {
+        let (p, f, c, factory) = try setup()
+        await p.start(); await f.configure(hold: true)
+        await f.hint("account/updated")
+        await quotaEventually { await p.currentState().lastGood == nil }
+        await quotaEventually { c.sleepers > 0 }; c.advance(60)
+        await quotaEventually { await f.waiting != nil }
         let state = await p.currentState(); XCTAssertNil(state.lastGood)
-        await new.complete(); await quotaEventually { await p.currentState().lastGood != nil }
-        let stopped = await old.stopped; XCTAssertEqual(stopped, 1)
+        await f.complete(); await quotaEventually { await p.currentState().lastGood != nil }
+        let count = await factory.count; XCTAssertEqual(count, 1)
+        let stops = await f.stopped; XCTAssertEqual(stops, 0)
         await p.stop()
     }
     func testLastSubscriberCancellationStopsOwnedResources() async throws {
@@ -197,5 +196,55 @@ extension QuotaProviderTests {
         await quotaEventually { await f.stopped == 1 }
         let last = await p.currentState().lastGood; XCTAssertNil(last)
         await p.stop()
+    }
+}
+
+
+extension QuotaProviderTests {
+    func testStartupAccountHintDoesNotCreateProcessRestartLoop() async throws {
+        let (p, f, c, factory) = try setup()
+        await f.setStartupNotification(); await p.start()
+        await quotaEventually { await !p.isRefreshing }
+        let count = await factory.count; XCTAssertEqual(count, 1)
+        // A hint may invalidate a pending read; one coalesced reread recovers on the same process.
+        c.advance(60)
+        await quotaEventually { await p.currentState().lastGood != nil }
+        let finalCount = await factory.count; XCTAssertEqual(finalCount, 1)
+        await p.stop()
+    }
+    func testOfflineTransitionCannotOverwriteLaterEnableWhileStopIsPending() async throws {
+        let clock = QuotaTestClock()
+        let old = QuotaTransportFake(quota: try Fixture.data("weekly-only", ext: "json"))
+        let new = QuotaTransportFake(quota: try Fixture.data("empty-map", ext: "json"))
+        let factory = QuotaFactoryFake([old, new])
+        let p = QuotaProvider(scheduler: clock, transportFactory: { try await factory.make() })
+        await p.start(); await old.setHoldStop()
+        let disabling = Task { await p.setOffline(true) }
+        await quotaEventually { await old.stopWaiting != nil }
+        let duringStop = await p.currentState(); XCTAssertEqual(duringStop, .unavailable(.offline))
+        await p.setOffline(false)
+        let enabled = await p.currentState(); XCTAssertNotNil(enabled.lastGood)
+        await old.completeStop(); await disabling.value
+        let after = await p.currentState(); XCTAssertEqual(after, enabled)
+        await p.stop()
+    }
+}
+
+extension QuotaProviderTests {
+    func testSchemaOptionalAbsentAccountMeansAuthenticationAbsent() async throws {
+        let (p, f, c, _) = try setup(); await p.start()
+        await f.configure(account: quotaBytes(#"{"requiresOpenaiAuth":true}"#))
+        await p.refresh(now: c.now())
+        let state = await p.currentState(); XCTAssertEqual(state, .unavailable(.authenticationAbsent))
+        await p.stop()
+    }
+}
+
+
+extension QuotaProviderTests {
+    func testUnsupportedInitializationStopsOwnedTransport() async throws {
+        let (p, f, _, _) = try setup(); await f.failInitialization(); await p.start()
+        let state = await p.currentState(); XCTAssertEqual(state, .unavailable(.unsupportedProtocol))
+        let stops = await f.stopped; XCTAssertEqual(stops, 1); await p.stop()
     }
 }

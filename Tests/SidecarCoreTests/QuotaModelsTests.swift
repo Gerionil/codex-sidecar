@@ -61,3 +61,20 @@ final class QuotaModelsTests: XCTestCase {
     }
     func decode(_ raw: String) throws -> QuotaSnapshot { try QuotaDecoder.decodeRead(Data(raw.utf8), receivedAt: time) }
 }
+
+extension QuotaModelsTests {
+    func testInt64DurationsPreserveIntegerPrecision() throws {
+        let s = try decode(#"{"rateLimits":{"primary":{"usedPercent":0,"windowDurationMins":9007199254740993},"secondary":{"usedPercent":0,"windowDurationMins":9223372036854775807}}}"#)
+        XCTAssertEqual(s.buckets[0].windows.map(\.durationMinutes), [9007199254740993, Int64.max])
+    }
+}
+
+extension QuotaModelsTests {
+    func testFiveHourAndWeeklyAppearOnlyWhenReturnedAndUnknownBucketNeedsSelection() throws {
+        let s = try decode(#"{"rateLimitsByLimitId":{"additional":{"limitName":null,"normalModelSlug":null,"primary":{"usedPercent":null,"windowDurationMins":300,"resetsAt":null},"secondary":{"usedPercent":12.5,"windowDurationMins":10080,"resetsAt":1800000000}}}}"#)
+        XCTAssertEqual(s.buckets[0].windows.map(\.label), ["5h", "Weekly"])
+        XCTAssertNil(s.buckets[0].windows[0].remainingPercent)
+        XCTAssertEqual(s.buckets[0].windows[1].remainingPercent, 87.5)
+        XCTAssertNil(s.defaultBucketID)
+    }
+}

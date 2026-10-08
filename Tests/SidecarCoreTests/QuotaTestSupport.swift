@@ -46,6 +46,10 @@ actor QuotaTransportFake: QuotaTransport {
     nonisolated let continuation: AsyncStream<Data>.Continuation
     var calls: [String] = []
     var stopped = 0
+    var startupNotification = false
+    var initializationFailure: QuotaFailure?
+    var holdStop = false
+    var stopWaiting: CheckedContinuation<Void, Never>?
     var quota: Data
     var account = quotaBytes(#"{"account":{"type":"chatgpt","email":"synthetic-a@example.invalid"},"requiresOpenaiAuth":true}"#)
     var failure: QuotaFailure?
@@ -59,7 +63,7 @@ actor QuotaTransportFake: QuotaTransport {
     func request(method: String, params: Data?) async throws -> Data {
         calls.append(method); active += 1; maximumActive = max(active, maximumActive)
         defer { active -= 1 }
-        if method == "initialize" { return quotaBytes(#"{"userAgent":"synthetic"}"#) }
+        if method == "initialize" { if let initializationFailure { throw initializationFailure }; if startupNotification { hint("account/updated") }; return quotaBytes(#"{"userAgent":"synthetic"}"#) }
         if method == "initialized" { return quotaBytes("{}") }
         if method == "account/read" { return account }
         if hold { return try await withCheckedThrowingContinuation { waiting = $0 } }
@@ -67,7 +71,11 @@ actor QuotaTransportFake: QuotaTransport {
         return quota
     }
     nonisolated func notifications() -> AsyncStream<Data> { stream }
-    func stop() async { stopped += 1; continuation.finish() }
+    func stop() async { stopped += 1; continuation.finish(); if holdStop { await withCheckedContinuation { stopWaiting = $0 } } }
+    func failInitialization() { initializationFailure = .requestFailed }
+    func setStartupNotification() { startupNotification = true }
+    func setHoldStop() { holdStop = true }
+    func completeStop() { let c = stopWaiting; stopWaiting = nil; c?.resume() }
     func configure(hold: Bool = false, failure: QuotaFailure? = nil, account: Data? = nil, quota: Data? = nil) {
         self.hold = hold; self.failure = failure
         if let account { self.account = account }; if let quota { self.quota = quota }

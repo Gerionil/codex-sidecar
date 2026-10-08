@@ -88,28 +88,30 @@ public actor QuotaProvider {
                 }
             }
             guard let transport else { return }
+            let ownedProcess = processID
             if !initialized {
                 let reply: Data
                 do { reply = try await transport.request(method: "initialize", params: Data(#"{"clientInfo":{"name":"codex_sidecar","version":"0.1.0"}}"#.utf8)) }
                 catch { throw (error as? QuotaFailure == .requestFailed ? QuotaFailure.unsupportedProtocol : error) }
-                guard valid(epoch) else { return }
+                guard ownedProcess == processID, !offline, !stopped else { return }
                 let initResult = try QuotaDecoder.dictionary(reply)
                 guard let agent = initResult["userAgent"] as? String, !agent.isEmpty else { throw QuotaFailure.unsupportedProtocol }
                 _ = try await transport.request(method: "initialized", params: nil)
-                guard valid(epoch) else { return }
+                guard ownedProcess == processID, !offline, !stopped else { return }
                 initialized = true
             }
+            guard valid(epoch) else { return }
             let accountBytes = try await transport.request(method: "account/read", params: Data(#"{"refreshToken":false}"#.utf8))
             guard valid(epoch) else { return }
             let accountReply = try QuotaDecoder.dictionary(accountBytes)
-            guard accountReply.keys.contains("account") else { throw QuotaFailure.malformedReply }
+            guard accountReply.keys.contains("account") else { throw QuotaFailure.authenticationAbsent }
             guard let account = accountReply["account"] as? [String: Any] else {
                 if accountReply["account"] is NSNull { throw QuotaFailure.authenticationAbsent }
                 throw QuotaFailure.malformedReply
             }
             guard let kind = account["type"] as? String else { throw QuotaFailure.malformedReply }
             if kind == "apiKey" { throw QuotaFailure.apiKeyOnly }
-            guard ["chatgpt", "chatgptAuthTokens"].contains(kind) else { throw QuotaFailure.unsupportedProtocol }
+            guard kind == "chatgpt" else { throw QuotaFailure.unsupportedProtocol }
             // Only compare allowlisted identity fields, never serialize or export the account payload.
             let fingerprint = [kind, account["email"] as? String ?? "", account["chatgptAccountId"] as? String ?? ""].joined(separator: "\u{0}")
             if let identity, identity != fingerprint {
@@ -146,7 +148,7 @@ public actor QuotaProvider {
             failures += 1
             nextRead = scheduler.now().addingTimeInterval([60.0, 120, 300][min(failures - 1, 2)])
             if [.processExited, .timeout, .malformedReply, .unsupportedProtocol, .stopped].contains(reason) {
-                let old = self.transport; self.transport = nil; initialized = false; listener?.cancel(); listener = nil
+                let old = self.transport; self.transport = nil; processID = nil; initialized = false; listener?.cancel(); listener = nil
                 await old?.stop()
             }
         }
@@ -156,7 +158,11 @@ public actor QuotaProvider {
         guard processToken == processID, !offline, !stopped, running,
               let raw = try? QuotaDecoder.dictionary(data), let method = raw["method"] as? String else { return }
         if method == "account/updated" {
-            Task { [weak self] in await self?.notifiedAccountChange(processToken) }
+            // Keep the process/handshake; startup notifications must not cause a restart loop.
+            generation &+= 1; identity = nil; quotaAccountID = nil; resetHints.removeAll()
+            publish(.loading)
+            nextRead = scheduler.now().addingTimeInterval(60)
+            reschedule()
         }
         // Rate notifications deliberately change neither cache nor deadlines: next eligible full read coalesces them.
     }
@@ -197,33 +203,37 @@ public actor QuotaProvider {
         if let good = state.lastGood { publish(.stale(good, .wake)) }
         await refresh(now: scheduler.now())
     }
-    private func notifiedAccountChange(_ token: UUID) async {
-        guard token == processID else { return }
-        await accountChanged()
-    }
     public func accountChanged() async {
         guard !stopped else { return }
-        await invalidate()
-        guard !offline else { publish(.unavailable(.offline)); return }
-        publish(.loading); await start()
+        publish(offline ? .unavailable(.offline) : .loading)
+        let token = await invalidate()
+        guard token == generation, !stopped, !offline else { return }
+        await start()
     }
     public func setOffline(_ enabled: Bool) async {
         guard !stopped, offline != enabled else { return }
-        offline = enabled; await invalidate()
-        if enabled { running = false; publish(.unavailable(.offline)) }
-        else { publish(.loading); await start() }
+        offline = enabled
+        publish(enabled ? .unavailable(.offline) : .loading)
+        if enabled { running = false }
+        let token = await invalidate()
+        guard token == generation, !stopped, offline == enabled else { return }
+        if !enabled { await start() }
     }
-    private func invalidate() async {
+    @discardableResult private func invalidate() async -> UInt64 {
         generation &+= 1
+        let token = generation
         flight?.cancel(); flight = nil; flightID = nil; processID = nil; timer?.cancel(); timer = nil; listener?.cancel(); listener = nil
         identity = nil; quotaAccountID = nil; initialized = false; failures = 0; resetHints.removeAll(); nextRead = nil
         let old = transport; transport = nil
         await old?.stop()
+        return token
     }
-    private func suspend() async { running = false; await invalidate(); publish(offline ? .unavailable(.offline) : .unavailable(.stopped)) }
+    private func suspend() async {
+        running = false; publish(offline ? .unavailable(.offline) : .unavailable(.stopped)); await invalidate()
+    }
     public func stop() async {
         guard !stopped else { return }
-        stopped = true; running = false; await invalidate(); state = .unavailable(.stopped)
+        stopped = true; running = false; state = .unavailable(.stopped); await invalidate()
         let streams = subscriptions.values; subscriptions.removeAll()
         for stream in streams { stream.finish() }
     }

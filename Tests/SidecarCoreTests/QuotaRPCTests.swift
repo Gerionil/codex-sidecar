@@ -141,3 +141,75 @@ extension QuotaRPCTests {
         await rpc.stop()
     }
 }
+
+extension QuotaRPCTests {
+    func testAccountChangeHintSurvivesQuotaHintFlood() async throws {
+        let wire = QuotaWireFake(); let rpc = QuotaRPC(wire: wire)
+        let task = Task { try await rpc.request(method: "account/read", params: quotaBytes(#"{"refreshToken":false}"#)) }
+        await quotaEventually { await wire.writes.count == 1 }
+        await wire.send(#"{"method":"account/updated"}"#)
+        for _ in 0..<100 { await wire.send(#"{"method":"account/rateLimits/updated"}"#) }
+        let id = await wire.requestID("account/read")!
+        await wire.send("{\"id\":\(id),\"result\":{}}")
+        _ = try await task.value
+        var iterator = rpc.notifications().makeAsyncIterator()
+        let hint = await iterator.next()
+        XCTAssertEqual(try QuotaDecoder.dictionary(try XCTUnwrap(hint))["method"] as? String, "account/updated")
+        await rpc.stop()
+    }
+    func testOversizedServerRequestIDIsNotReflected() async {
+        let wire = QuotaWireFake(); let rpc = QuotaRPC(wire: wire)
+        let task = Task { try await rpc.request(method: "account/read", params: quotaBytes(#"{"refreshToken":false}"#)) }
+        await quotaEventually { await wire.writes.count == 1 }
+        await wire.send("{\"id\":\"" + String(repeating: "x", count: 262144) + "\",\"method\":\"unknown\"}")
+        // Complete outstanding request so the old implementation fails without hanging.
+        await wire.send(#"{"id":1,"result":{}}"#)
+        do { _ = try await task.value; XCTFail("Oversized server ID accepted") }
+        catch { XCTAssertEqual(error as? QuotaFailure, .malformedReply) }
+        let writes = await wire.writes; XCTAssertFalse(writes.contains { $0.count > 1024 })
+        await rpc.stop()
+    }
+}
+
+extension QuotaRPCTests {
+    func testNonreadingChildCannotBlockStopAndWriterIsBounded() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let executable = root.appendingPathComponent("nonreading-child")
+        try "#!/usr/bin/perl\n$|=1; print qq(ready\\n); $SIG{TERM}=sub { exit 0 }; while(1) { select undef,undef,undef,0.01; }\n".write(to: executable, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions:0o700], ofItemAtPath: executable.path)
+        let wire = ProcessQuotaWire(.init(executable: executable, root: root, environment: [:]))
+        try await wire.start()
+        var iterator = wire.events.makeAsyncIterator(); _ = await iterator.next()
+        let results = QuotaWriteResults()
+        let jobs = (0..<256).map { _ in Task {
+            do { try await wire.write(Data(repeating: 65, count: 1024)); await results.record(nil) }
+            catch { await results.record(error as? QuotaFailure) }
+        } }
+        // Queue saturation proves we reached pipe backpressure, without a real sleep.
+        await quotaEventually { await results.reasons.contains(.malformedReply) }
+        let start = Date(); await wire.stop()
+        XCTAssertLessThan(Date().timeIntervalSince(start), 2)
+        for job in jobs { await job.value }
+        let count = await results.count; XCTAssertEqual(count, 256)
+    }
+    func testClosedChildStdinDoesNotSendSIGPIPEToHost() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let executable = root.appendingPathComponent("closed-input-child")
+        try "#!/usr/bin/perl\nclose STDIN; $|=1; print qq(ready\\n); while(1) { select undef,undef,undef,0.01; }\n".write(to: executable, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions:0o700], ofItemAtPath: executable.path)
+        let wire = ProcessQuotaWire(.init(executable: executable, root: root, environment: [:]))
+        try await wire.start(); var iterator = wire.events.makeAsyncIterator(); _ = await iterator.next()
+        do { try await wire.write(quotaBytes("synthetic\n")); XCTFail("Closed pipe accepted") }
+        catch { XCTAssertEqual(error as? QuotaFailure, .processExited) }
+        await wire.stop()
+    }
+}
+private actor QuotaWriteResults {
+    var count = 0
+    var reasons: [QuotaFailure] = []
+    func record(_ reason: QuotaFailure?) { count += 1; if let reason { reasons.append(reason) } }
+}
