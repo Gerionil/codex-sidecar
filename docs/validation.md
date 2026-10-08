@@ -1,5 +1,48 @@
 # Validation record
 
+## 2026-10-08 — Owner-reported manual acceptance on the current Mac
+
+The owner reported completing the supplied manual checklist except keyboard
+navigation (Tab/Shift+Tab), VoiceOver labels and naturally appended completed
+responses in a real chat. The no-natural-event reporting item is part of that
+same live-append gap, not a fourth independent test. This is **owner-reported
+native evidence**, not an automated UI-channel inspection or a new deterministic
+suite. Acceptance scope is explicitly limited to the current Apple Silicon Mac;
+macOS 14 and Intel remain untested, with no other environment required for this
+bounded acceptance pass.
+
+Covered by the owner's report: launch/menu icon, empty selection, synthetic A/B
+accounting and details, empty chat, long labels/resizing/scrolling/selectable
+numbers, shared selection and quota independence, pinning with a new synthetic
+chat, panel dismissal/reopening, one companion window/focus/reuse/close/reopen,
+all supplied quota variants (weekly-only, 5h plus Weekly, multiple buckets,
+duplicate-duration slots, null values, empty map, loading, stale, retained error,
+authentication unavailable), synthetic append, offline local updates/recovery,
+and GUI Quit followed by the helper's process/fingerprint/allowlist check.
+No new personal numeric data, transcript screenshots or real identifiers were
+copied into the repository.
+
+| Acceptance area | Updated evidence / remaining limitation |
+| --- | --- |
+| A1 | Native manual selection and synthetic launch overrides owner-reported PASS; exhaustive native Settings/root/archive variants remain outside this checklist |
+| A2, A5–A7 | Supplied synthetic displayed metrics/details and unavailable current context owner-reported PASS; underlying deterministic accounting evidence remains separate |
+| A8–A9 | Supplied synthetic quota rendering and offline behavior owner-reported PASS; real account changes/cross-process notifications remain unverified |
+| A11 | Synthetic visible append and GUI Quit/owned cleanup owner-reported PASS; real completed-response live append remains UNVERIFIED |
+| A12 | Prior bounded installed numeric/quota comparison and repository hygiene evidence retained; no new real-data probe |
+| A13 | Shared/pinned selection, quota independence, panel/window lifecycle and GUI Quit owner-reported PASS |
+| Keyboard/accessibility | Tab/Shift+Tab and VoiceOver checks NOT PERFORMED |
+
+Full native acceptance is still incomplete for the remaining checks. The owner
+also identified selector usability improvements: recent chats should appear first,
+and available chat titles should replace opaque IDs after the project label.
+These are requested follow-up changes, not passing acceptance of existing title
+support. Current catalog ordering is root-first then identity, and current labels
+show project/short ID/provenance/activity. No feature code is changed by this
+acceptance record. Subsequent selector changes require focused regression checks
+and a brief repeat of selection/layout acceptance.
+
+The records below preserve earlier evidence and its original limitations.
+
 ## 2026-10-08 — Stage 6 installed-version validation and repository hygiene
 
 **Status: authorized validation/documentation work performed; full native

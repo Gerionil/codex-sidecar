@@ -8,9 +8,11 @@ SwiftUI and Foundation; no third-party runtime dependencies or metrics database.
 
 Stages 1–5 are implemented and locally merged. Stage 6 adds installed-profile
 numeric validation, repository hygiene review and operating documentation.
-Native interactive acceptance is **incomplete**: the computer-use channel failed
-before providing an accessibility tree or screenshot. Successful launch and
-unit tests do not establish full GUI acceptance. See the dated
+The owner completed the supplied native manual checklist on the current Mac,
+except keyboard navigation, VoiceOver and real completed-response live append.
+Native acceptance therefore remains **incomplete**. The automated computer-use
+channel failed before providing an accessibility tree or screenshot; the manual
+results are recorded separately as owner-reported evidence. See the dated
 [validation record](docs/validation.md) for checks, limitations and the historical
 Stage 5 default-root launch incident.
 
@@ -87,8 +89,8 @@ Selection stays pinned until changed; recent activity is a suggestion, not
 foreground-chat detection. Changing a chat changes its usage, not current-account
 quotas. **Open window** is implemented to open/focus the companion; closing the
 window keeps the menu-bar app running. **Quit** is implemented to stop owned
-readers and quota workers. Native focus/reuse/close/reopen/Quit behavior still
-needs interactive acceptance.
+readers and quota workers. These focus/reuse/close/reopen/Quit checks passed in the owner-reported synthetic
+manual checklist; keyboard and VoiceOver acceptance remains outstanding.
 
 ## Metrics and data boundaries
 
