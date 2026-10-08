@@ -17,9 +17,9 @@ third-party runtime dependencies.
 
 **Spec:** [SPEC.md](SPEC.md), dated 2026-10-07.
 
-Status: **Stages 1–4 implemented; Stage 5 implementation and deterministic checks complete, native UI acceptance incomplete**, with fresh evidence in
-[docs/validation.md](docs/validation.md). Stage 6 has not started and requires
-explicit owner instructions. A plan checkbox is not proof of a passing test.
+Status: **Stages 1–5 implemented; Stage 6 validation/documentation performed, native UI acceptance incomplete**, with dated evidence and unresolved gates in
+[docs/validation.md](docs/validation.md). Stage 6 has no release/publication
+authorization. A plan checkbox is not proof of full application acceptance.
 
 The owner approved macOS-first delivery and Swift/SwiftUI on 2026-10-07.
 Windows is a possible later phase, not a first-release deliverable. This updated
@@ -570,23 +570,23 @@ and a reviewable local project. No release/push/deployment.
 has selected a license, create `LICENSE` with that exact choice; otherwise mark
 publication as gated rather than inventing a license.
 
-- [ ] **Step 1: Run final deterministic checks once after final changes.**
+- [x] **Step 1: Run final deterministic checks once after final changes.**
   `swift test` and `swift build -c release` must succeed. Verify all A1–A13
   acceptance rows against owning stage/test evidence. Repeat only for new changes,
   failures or unresolved gaps; never substitute screenshots for accounting tests.
-- [ ] **Step 2: Bounded real read-only acceptance.** Manually select an existing
+- [x] **Step 2: Bounded real read-only acceptance.** Manually select an existing
   local session with native records and compare derived unique owned sums,
   breakdown and cache rate against a selective numeric inspection in memory.
   Record only equality/difference and version, not private paths/IDs/totals/raw
   transcript captures. Observe naturally appended completed responses if present;
   do not start inference to generate validation data. If no new response occurs,
   mark live-append acceptance unverified and rely on synthetic append tests.
-- [ ] **Step 3: Verify passive quota behavior.** Read current quotas once, compare
+- [x] **Step 3: Verify passive quota behavior.** Read current quotas once, compare
   supported field/window interpretation to source result, and confirm absent
   windows stay absent. Do not trigger auth loss/reset/account changes on a real
   account; those are fake-transport tests. Document that loaded desktop thread
   detection and exact current context remain unsupported.
-- [ ] **Step 4: Inspect public hygiene.** Enumerate all project files. Scan text
+- [x] **Step 4: Inspect public hygiene.** Enumerate all project files. Scan text
   for real home paths, bearer/API tokens, auth payloads, raw prompts/tool arguments,
   account/session IDs and exported logs. Review matches manually; synthetic marker
   strings and invented fixture IDs are allowed. Confirm lockfiles are tracked if
@@ -594,13 +594,19 @@ publication as gated rather than inventing a license.
   all docs/UI/code are English, and no downloaded upstream source was vendored.
   Check selected local log fingerprints before/after Sidecar reads to establish
   read-only behavior without treating concurrently appended Codex logs as tampering.
-- [ ] **Step 5: Document evidence and stop.** `docs/validation.md` must separate
+- [x] **Step 5: Document evidence and stop.** `docs/validation.md` must separate
   passing synthetic tests, passing live checks, unverified platform/notification
   cases, unsupported metrics, and any blockers. README documents build/run,
   selection, offline/network behavior, compatibility profile and known limits.
   Present the result and local diffs. Suggested commit:
   `docs: record installed-profile acceptance and privacy limits`.
   Publication/license/signing/notarization/push remain separate owner actions.
+
+**Execution evidence (2026-10-08):** bounded native attempt, real numeric
+comparison, one fresh passive quota full read, hygiene review, tests/build/package
+and documentation are recorded in docs/validation.md. Native interaction and
+completed-response live append remain unverified; checked steps denote the
+authorized validation work, not closure of those acceptance gaps.
 
 **Acceptance:** A12 and all cross-stage invariants. An unverified exact-context or
 foreground-follow feature is not “completed” by substituting a guess.

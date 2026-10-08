@@ -1,7 +1,9 @@
 # Codex Sidecar Research
 
-Research date: **2026-10-07**. Status: completed first-session investigation;
-application implementation has not started. This document supersedes the original
+Research date: **2026-10-07**, with a bounded installed-profile recheck on
+**2026-10-08**. The first-session investigation is historical; Stages 1–5 are now
+implemented. Native interactive acceptance remains incomplete (see
+[validation](validation.md)). This document supersedes the original
 research backlog. [SPEC.md](../SPEC.md) contains product decisions, and
 [IMPLEMENTATION_PLAN.md](../IMPLEMENTATION_PLAN.md) defines subsequent work.
 
@@ -393,6 +395,41 @@ buckets by their returned ID/name without hard-coded model lists. Credit and
 spend-control metadata are distinct from duration-based quota windows and must
 not be treated as a fabricated time window. Retrieval succeeded through Codex
 managed authentication without direct credential reading by the research client.
+
+### 3.2 Stage 6 installed-profile recheck — 2026-10-08
+
+Executable discovery and bounded `--version` verification freshly returned
+**Codex CLI 0.160.1**. The production allowlisted QuotaProvider/QuotaRPC used the
+same resolved Codex root as session discovery, with analytics disabled for its
+owned process. One initial attempt was stopped after a startup account hint
+invalidated the pending read, **before any quota read**. A bounded recovery run
+allowed the existing scheduled 60-second reread on the same process; it completed
+**exactly one** `account/rateLimits/read`. No repeated successful probes were made.
+
+The normalized result matched an independent field comparison in memory for
+dynamic bucket membership, optional names/model aliases, primary/secondary slot
+identity, numeric availability, durations in minutes and reset timestamps in Unix
+seconds. The current shape was one bucket with a 10,080-minute Weekly window and
+one absent slot; no 300-minute window was returned. Present-window numeric fields
+were non-null; the absent window remained absent. This does not establish real
+multiple-bucket, duplicate-duration or null-numeric-field coverage: those remain
+synthetic tests. Percentages, reset dates, account IDs and raw replies were not
+exported. The owned transport was stopped. No authentication file was opened or
+account/inference mutation requested; Codex-managed housekeeping is not audited.
+
+A bounded existing native session (header 0.160.1) also matched independent
+numeric inspection for unique-response count, observed total, optional breakdown,
+cache rate, reported cumulative and reconciliation. Selected-file fingerprints
+showed growth with the original prefix intact during a five-second interval,
+rather than unchanged bytes. Completed-response live-append and GUI visibility
+were not established by that byte growth. See the dated validation record for
+method limits and remaining acceptance gaps.
+
+Context7 resolved `/openai/codex` and queried the passive stdio/account protocol.
+Its current-main documentation corroborates the method/field shape; installed
+execution above, rather than current-main source, is the compatibility evidence.
+No new product research or upstream implementation copying was performed.
+Cross-process notification delivery and actual account changes remain unverified.
 
 ## 4. Existing projects: pinned source audit
 

@@ -1,9 +1,10 @@
 # Codex Sidecar Specification
 
-Date: **2026-10-07**. Status: the owner has approved macOS as the first-release
-platform and Swift/SwiftUI as the stack. The specification reflects the discussed
-menu-bar panel and companion window. Application implementation has not started
-and remains outside this research/documentation session.
+Date: **2026-10-07** (approved product specification). The owner approved macOS
+as the first-release platform and Swift/SwiftUI as the stack. Stages 1–5 are now
+implemented; Stage 6 validation is recorded in [docs/validation.md](docs/validation.md).
+Native interactive acceptance remains incomplete. Product requirements below are
+unchanged; the original research session preceded implementation.
 
 Evidence: [research findings](docs/research.md). Execution:
 [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md). Where starter notes differ,
@@ -515,5 +516,6 @@ portability: a Windows version needs another UI and adaptation of platform code.
 | Public project license? | No copied code; own license must be explicitly chosen before publication, which is separately authorized |
 
 This specification intentionally narrows unavailable metrics rather than blocking
-the useful local completed-response companion. No application code, dependency
-installation, packaging, inference, or publishing is part of this first session.
+the useful local completed-response companion. The original first session included
+no application code, dependency installation, packaging, inference or publishing. Current implementation and
+validation status is recorded separately above.

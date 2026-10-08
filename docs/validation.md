@@ -1,5 +1,187 @@
 # Validation record
 
+## 2026-10-08 — Stage 6 installed-version validation and repository hygiene
+
+**Status: authorized validation/documentation work performed; full native
+application acceptance remains incomplete.** Started `stage/6-validation` from
+clean local `main` at `150358b`, preserving Stages 1–5 and all existing branches.
+No product behavior changes or deferred reducer optimization were made. No push,
+merge, publication, license choice, installation, signing, notarization,
+quarantine removal or branch deletion was performed.
+
+### Synthetic native attempt, before real-data checks
+
+Fresh test-owned files contained two invented native sessions, including a long
+project label, and a fake quota executable with weekly-only data. LaunchServices
+inside the sandbox failed with `kLSNoExecutableErr` (-10827). A narrowly approved
+launch outside it used the packaged app with explicit `--isolated-settings`,
+`--codex-root` and `--codex-executable`. Process inspection confirmed exactly one
+Sidecar instance and all synthetic arguments **before** UI binding. The fake
+reported `0.0.0-synthetic`; its method-only log contained initialize, initialized,
+account/read and account/rateLimits/read, with no other methods.
+
+Inventory worked, but the single binding to the confirmed running instance
+failed with **`Sky Computer Use native pipe closed before response`**. No native
+accessibility tree or screenshot was obtained. No retry or auto-launch recovery
+was attempted. Post-failure inspection confirmed no extra/default-root instance.
+Only the identified test app and fake child were stopped by signals; absence was
+checked separately. Before/after SHA-256 comparisons of both synthetic source
+files matched. Signal cleanup does **not** verify explicit GUI Quit.
+
+The Stage 5 incident below remains historical and intact. This safe synthetic
+attempt supplies launch/argument/privacy evidence, not interactive acceptance.
+Weekly-only, 5h + Weekly, multiple buckets, duplicate-duration slots, null values,
+empty/loading/unavailable/stale/error presentation, default/resized/long-label
+layout, selectable numbers, keyboard/accessibility, native shared/pinned
+selection, quota independence, focus/reuse, panel dismissal/reopen, companion
+close/reopen, visible append updates, offline interaction and GUI Quit remain
+**unverified in native UI**. Their deterministic coverage is separate below.
+
+### Bounded real numeric comparison
+
+Production catalog discovery selected one existing root session with a valid
+owned native ledger and header version **0.160.1**. Candidate selection was bounded
+to twelve recent single-source root sessions and at most 8 MiB per candidate;
+only one eligible source was passed to SessionReader. An initial bounded batch
+in catalog ordering found no eligible sample; ordering was corrected to recent
+activity in the ignored validation harness, without changing application code.
+
+An independent selective in-memory inspection keyed native records by owning
+thread and response identity, checked counters/subsets, deduplicated responses,
+and compared cumulative baseline progression and mirrored numeric snapshots.
+The production SessionReader snapshot matched on all checked results:
+
+| Comparison | Result |
+| --- | --- |
+| Unique owned completed-response count | Equal |
+| Observed total and every optional breakdown component | Equal |
+| Aggregate cache rate, including availability | Equal |
+| Reconciliation classification | Equal |
+| Latest reported cumulative components | Equal |
+
+No source paths, session IDs, personal totals, prompts, reasoning, messages, tool
+arguments/output or raw lines were printed or saved. Source bytes were transient
+in memory; the ignored harness contains code and sanitized outcomes only, no
+captures. No authentication files or prompt-derived titles were read. The
+comparison is bounded single-session evidence, not exhaustive compatibility.
+
+SHA-256 fingerprinting bracketed the production read and a five-second natural
+observation. The selected source grew with the entire original prefix intact.
+Therefore **unchanged bytes are not claimed**; this is consistent with concurrent
+Codex append activity, rather than a source rewrite by Sidecar. The harness did
+not establish whether the appended bytes included another completed-response
+record, nor compare a new completed response to rendered GUI state. Real
+completed-response live-append acceptance remains **unverified**. No inference,
+resume/fork, compaction, interruption or chat mutation was initiated for data.
+
+### Current installed quota compatibility
+
+The chosen executable was resolved through production discovery and freshly
+verified as **0.160.1**, using the same resolved root as session discovery.
+Production QuotaProvider and its allowlisted QuotaRPC performed passive reads
+with analytics disabled, `refreshToken: false`,
+`excludeResetCreditDetails: true`, and no Luna reserve capability.
+
+The first attempt received an initialization account hint and was stopped before
+any quota read (zero full reads). This is the documented startup invalidation
+path, not a schema incompatibility. A bounded recovery run allowed the provider's
+ordinary scheduled 60-second retry on its existing process; it completed exactly
+**one** full quota read. No manual extra quota read or repeated successful probe.
+
+An independent in-memory comparison matched bucket membership/count, optional
+name/alias metadata, slot identity, nullable values, minute durations and reset
+conversion to Unix seconds. The returned shape had **one bucket, one 10,080-minute
+Weekly window, one absent slot, no 300-minute window**, and no null numeric fields
+inside the present window. Personal percentages, reset dates, account/plan values,
+identifiers and raw replies were not retained or printed. Nullable windows stayed
+absent; real multiple-bucket/duplicate-duration/null-numeric variants were not
+observed and retain synthetic coverage only.
+
+Methods remained allowlisted. Provider stop closed its owned transport; final
+process inspection verified cleanup. No auth files were opened, no login/logout,
+account switch, reset/credit action, inference or desktop process attachment was
+performed. Normal Codex authentication/runtime housekeeping is not certified
+read-only. Current initialization hints are not evidence for cross-process
+quota notifications or a real account change. Historical Stage 4 and research
+probes below are separate dated evidence, not substituted for this fresh check.
+
+### Public-repository hygiene
+
+Enumerated all **109 tracked files** and non-ignored untracked files (none before
+edits). Reviewed scan locations for home/machine paths, bearer/API/private-key
+patterns, UUIDs, transcript-bearing JSON keys and non-English artifact text.
+No real home paths, credential-shaped secrets, real captures, non-English text or
+tracked binary outputs were found. Reviewed UUIDs are the two invented fixture
+identities; transcript-field matches contain `PRIVATE_MARKER`, invented ignored
+text or synthetic account addresses. The documentation quota example uses a
+redacted account marker and invented values, as its fixture notes declare.
+
+`build/`, `.build/` and `.local/` are ignored, including the bundle, compiler
+caches, fake transport and temporary validation code. `.gitignore` already covers
+outputs, so no ignore change was needed. Package.swift contains only internal
+core/executable/test targets and Apple frameworks; no third-party dependencies,
+lockfile requirement or vendored upstream implementation was introduced. README
+now describes implementation status, build/package/run, override isolation,
+selection, offline/network behavior, executable verification, metric scope and
+acceptance gaps. Research adds only newly verified compatibility evidence.
+No LICENSE was invented; publication/license selection stays gated.
+
+### Fresh checks and environment
+
+Host: Apple Silicon macOS 27.0.1 (26A434), Apple Swift 6.4, active Xcode SDK 27.0.
+Project-local CLANG_MODULE_CACHE_PATH and SWIFTPM_MODULECACHE_OVERRIDE were used,
+with SwiftPM `--disable-sandbox`. The initial outer-sandbox test attempt built
+but stalled in XCTest; the parallel release invocation waited for its SwiftPM
+lock. Only those owned check processes were stopped, then checks were run
+sequentially outside the outer sandbox. Neither stalled invocation is a pass.
+
+| Check | Fresh result |
+| --- | --- |
+| `swift test --disable-sandbox` | PASS: 177 tests, 0 failures, 11.153 s (11.164 s whole suite) |
+| `swift build -c release --disable-sandbox` | PASS: production build, 6.88 s |
+| `scripts/package-app.sh --disable-sandbox`, plist/Mach-O inspection | PASS: packaged executable, valid plist; arm64 Mach-O with macOS 14.0 floor in plist and LC_BUILD_VERSION |
+| Reader 10,000-request measurements | Replay 0.232 s; append 0.921 s; discovery 5.092 s; pending cancellation 0.000163 s; stop 0.000441 s. Reader goals met, not GUI timings. |
+| `git diff --check` and independent review | PASS: no whitespace errors; one independent final review, no Critical/Important findings; one documentation Minor resolved |
+
+Independent final review checked the documentation against production sources,
+the approved Stage 6 scope, the ignored numeric harness and fresh build/test
+results. It found no Critical/Important issues. The sole Minor was incomplete
+README wording about persisted settings; it now explicitly lists local overrides,
+session/bucket selection and offline preference. No product fix was necessary,
+so no new regression tests or repeated live probes were added. There are no
+deferred reviewer findings. Local links resolve and historical validation text
+below is preserved verbatim.
+
+### Dated A1–A13 evidence map
+
+“Deterministic” means synthetic tests; “native” requires an actual GUI observation.
+Earlier-stage records below retain their original dates and limitations.
+
+| ID | Deterministic coverage retained in the fresh suite | Stage 6 live/native evidence and remaining gap |
+| --- | --- | --- |
+| A1 | SessionCatalogTests, SessionSelectionTests, PresentationStateTests: root precedence, missing/empty/unreadable roots, archives, children, concurrent candidates, manual pin/settings | Bounded real discovery and explicit synthetic launch overrides work; native selector/Settings and archived real sessions unverified |
+| A2 | TokenUsageTests, RolloutDecoderTests, SessionReducerTests: 180/66.67%, subsets, optional/zero/invalid/overflow | One real native ledger count/totals/breakdown/cache comparison equal |
+| A3 | SessionReducerTests, SessionReaderTests: replay, copies, moves, replacements, checkpoints, equal-value identities | No destructive live replay/archive manipulation; deterministic evidence only |
+| A4 | ReconciliationTests, SessionReducerTests: conflicts, foreign ownership, baseline/reset/legacy transitions | One real reconciliation and reported cumulative comparison equal; adversarial live histories unverified |
+| A5 | SessionReducerTests, PresentationStateTests: task/request distinction, interruption, missing start | No manufactured interruption; native detailed rows unverified |
+| A6 | ToolAssociatorTests, RolloutDecoderTests: function/custom calls, duplicates, late/orphaned/concurrent boundaries | No tool-payload inspection or independent live tool attribution; native details unverified |
+| A7 | ContextStateTests, PresentationStateTests: compaction/model/window invalidation and historical footprint | Exact current context unsupported; native labels unverified |
+| A8 | QuotaModelsTests, QuotaProviderTests, PresentationStateTests: weekly-only, 5h + Weekly, multiple/alias buckets, duplicate slots, null/empty maps, unknown durations, seconds | One fresh real weekly-only shape matches normalization; native variants and real multiple/null-numeric variants unverified |
+| A9 | QuotaRPCTests, QuotaProviderTests: timeout/auth/account generation, old replies, malformed/process exit, offline/wake/reset and startup hints | One passive quota full read after scheduled startup recovery; no induced auth/account/reset mutations, native offline interaction unverified |
+| A10 | LineFramerTests, RolloutDecoderTests, SessionReaderTests: partial/malformed/unknown/oversized UTF-8, shrink/replacement/rewrite, sanitized diagnostics | Real source fingerprint grew with unchanged prefix; no raw capture retained; destructive live cases unverified |
+| A11 | SessionReaderTests, ExecutableVersionTests, QuotaRPCTests, PresentationStateTests: append/discovery/10,000 requests, cancellation and owned shutdown | Fresh timing results above; synthetic process cleanup verified by signals; native responsiveness, GUI Quit and completed live append unverified |
+| A12 | Synthetic privacy-marker tests plus repository scan/manual review | Bounded real numeric equality, fresh installed version/quota shape and hygiene checks pass within stated scope; not full application acceptance |
+| A13 | PresentationStateTests: shared store/selection, quota independence, pinning, subscriber/provider reuse and shutdown races | No native shared-surface/focus/reopen/dismiss/Quit evidence; remains unverified |
+
+No Stage 5 interactive checkbox is advanced. macOS 14 and Intel runtime support,
+installation/distribution, signing/notarization, Windows/Linux, cross-process
+notifications, real account-change acceptance and foreground detection remain
+unverified or out of scope. Exact current context, exact fallback-model costs,
+failed-response costs and family-wide totals remain unsupported. Stage 6 stops
+at local review/commit; release/publication remain separate owner actions.
+
+The following records are historical earlier-stage evidence.
+
 ## 2026-10-08 — Stage 5 implementation; native UI acceptance incomplete
 
 **Latest status: Stages 1–4 implemented. Stage 5 code, deterministic tests and
