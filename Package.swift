@@ -8,7 +8,8 @@ let package = Package(
                .executable(name: "CodexSidecar", targets: ["CodexSidecar"])],
     targets: [
         .target(name: "SidecarCore"),
-        .executableTarget(name: "CodexSidecar", dependencies: ["SidecarCore"], exclude: ["Resources/Info.plist"]),
+        .executableTarget(name: "CodexSidecar", dependencies: ["SidecarCore"], exclude: ["Resources/Info.plist"],
+                          resources: [.copy("Resources/Icons")]),
         .testTarget(name: "SidecarCoreTests", dependencies: ["SidecarCore"],
                     resources: [.process("Fixtures")])
     ]

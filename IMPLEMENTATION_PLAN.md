@@ -711,3 +711,21 @@ colorScheme follows the selected Light/Dark preference in synthetic renders with
 opposite ambient schemes; System removes the override. Fresh 198-test suite,
 release/package and independent review passed. Native status-item theme recheck
 remains pending; both-surface natural updates were not specifically observed.
+
+The owner subsequently confirmed that the native menu-panel theme changes
+correctly. This appearance acceptance item is closed for the current Mac.
+
+
+## Owner-selected logo follow-up — 2026-10-08
+
+The owner selected Companion (A) after the three-concept checkpoint. Implement
+only the application identity: Dock ICNS, monochrome Retina menu-bar template,
+vector masters and local package integration. No unrelated marketing kit,
+remote skill installation, push or publication. Native generation uses AppKit
+and iconutil; SwiftPM resources serve the menu image in both app/CLI layouts.
+
+Delivered vector masters, Dock ICNS and Retina template assets; native generation,
+release/package, packaged resource probe, small/light/dark renders and independent
+review passed. Updated app launched normally. XCTest passed as separate 195 + 3
+runs; combined runs stalled in the existing version-probe waitUntilExit path,
+recorded in docs/validation.md without an unsupported root-cause claim.

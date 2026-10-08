@@ -1,5 +1,49 @@
 # Validation record
 
+## 2026-10-08 — Owner-selected Companion logo integration
+
+The owner chose concept A. Added a graphite C with a blue detached companion on
+an opaque light rounded Dock tile, plus a black/transparent 18 pt menu-bar
+symbol. AppKit template rendering supplies the foreground for light/dark system
+surfaces. Added 18/36 pixel representations, standard ICNS sizes through 1024 px,
+vector masters, regeneration instructions and native build-time generation.
+The packaging script includes the SwiftPM resource bundle and CFBundleIconFile
+resource; the app's menu label loads the custom template with its existing
+accessibility name. No quota/accounting behavior changed.
+
+Fresh checks:
+
+- Native generator and iconutil completed; ICNS round-trip recovered the
+  1024-pixel representation; Info.plist lint and release/package passed.
+- Symbol and menu SVG audits reported no issues; source-art and NSWorkspace
+  system icon-lookup renders were inspected. This is system icon lookup, not a
+  screenshot of the live Dock.
+- A separate synthetic AppKit/SwiftUI probe loaded SidecarBrand from a copied
+  `.app/Contents/Resources` bundle, checked template state, logical size,
+  18/36 px representations, nonempty ink/transparency and black-only pixels.
+  Native template renders showed dark ink on light and light ink on dark.
+- Normal Quit/launch of the updated app succeeded; it was left running. No
+  preference change, VoiceOver activation or model request was performed.
+  Direct status-item screenshot/interaction remains unavailable to automation.
+- Independent integration review found no actionable issues; diff check passed.
+- XCTest passed in partitioned runs: 195 tests excluding ExecutableVersionTests,
+  then its 3 tests separately (zero failures in either). Two combined attempts
+  stalled; samples showed the existing ExecutableVersion.verify implementation
+  waiting in Process.waitUntilExit at SidecarRuntime.swift:35 after no child
+  process remained. Those owned test runners were terminated. Root cause is
+  unresolved; do not call this a successful single 198-test suite run or infer
+  that the logo fixes this lifecycle/test-runner issue. Core code was unchanged.
+
+No Intel/older-macOS verification, remote skill installation, push or merge.
+
+## 2026-10-08 — Owner confirms native panel appearance
+
+The owner reports that the menu-panel theme changes correctly after the latest
+fix. The native appearance recheck is accepted on the current Mac. VoiceOver
+remains excluded by the owner; no Intel or older-macOS runtime acceptance is
+claimed. Both-surface natural-update observation remains a separate unverified
+check in the automated run.
+
 ## 2026-10-08 — Settings name and menu-panel appearance follow-up
 
 The owner explicitly excluded VoiceOver from this acceptance scope and reported

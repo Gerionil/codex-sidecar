@@ -61,8 +61,7 @@ struct SidecarApp: App {
             MenuBarView(store: store)
                 .modifier(SidecarPanelAppearance(appearance: store.settings.appearance))
         } label: {
-            Label("Codex Sidecar", systemImage: "gauge.with.dots.needle.33percent")
-                .labelStyle(.iconOnly)
+            Image(nsImage: SidecarBrand.menuBarImage)
                 .accessibilityLabel("Codex Sidecar")
         }
         .menuBarExtraStyle(.window)

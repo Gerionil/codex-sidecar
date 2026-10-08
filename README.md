@@ -47,7 +47,9 @@ scripts/package-app.sh --disable-sandbox
 ```
 
 The packaging script copies the release executable and Info.plist into
-`build/Codex Sidecar.app`. Build outputs and local validation scratch files are
+`build/Codex Sidecar.app`. The package includes a Dock icon and a monochrome
+menu-bar template with Retina resolution. Icon masters and regeneration notes
+are in [docs/design/brand](docs/design/brand/README.md). Build outputs and local validation scratch files are
 ignored. Packaging does not install, sign, notarize, upload or enable autostart.
 The validation sandbox also required narrowly approved execution outside it for
 native launch and tests; `--disable-sandbox` alone does not lift the host's outer
