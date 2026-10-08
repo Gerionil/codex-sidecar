@@ -4,8 +4,8 @@ Research date: **2026-10-07**, with a bounded installed-profile recheck on
 **2026-10-08**. The first-session investigation is historical; Stages 1–5 are now
 implemented. Stage 6 is complete in the owner-approved current-Mac scope (see
 [validation](validation.md)). This document supersedes the original
-research backlog. [SPEC.md](../SPEC.md) contains product decisions, and
-[IMPLEMENTATION_PLAN.md](../IMPLEMENTATION_PLAN.md) defines subsequent work.
+research backlog. The [README](../README.md) describes the current product;
+[validation](validation.md) records acceptance evidence and remaining limitations.
 
 ## Method and evidence boundaries
 
@@ -613,8 +613,9 @@ can support automated checks, but a future supported Windows release also needs
 real installation, tray, Codex auth/limits, session discovery and relevant WSL
 acceptance through a tester or accessible runtime environment. A SwiftUI MVP
 would need a new Windows UI and adaptation of platform code; separating UI and
-accounting responsibilities does not guarantee an automatic port. The authoritative
-current requirements are in [SPEC.md](../SPEC.md) and [IMPLEMENTATION_PLAN.md](../IMPLEMENTATION_PLAN.md).
+accounting responsibilities does not guarantee an automatic port. Current
+behavior and limitations are described in the [README](../README.md) and
+[validation](validation.md).
 
 ### Optional stored chat metadata — 2026-10-08
 

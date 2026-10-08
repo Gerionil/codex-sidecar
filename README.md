@@ -265,14 +265,11 @@ address; select the matching asset and network in your wallet before sending.
   </tr>
 </table>
 
-## Project references
+## Documentation
 
-- [Specification](SPEC.md) — approved product and accounting boundaries
-- [Implementation plan](IMPLEMENTATION_PLAN.md) — stage scope and acceptance
+- [Installation guide](docs/INSTALL.md) — setup, first launch and updates
+- [Release notes](docs/releases/0.1.0.md) — features and known limitations
 - [Research](docs/research.md) — dated schema/source and installed-profile evidence
 - [Validation](docs/validation.md) — fresh checks and scoped acceptance
-- [Working instructions](AGENTS.md) — language, privacy and branch workflow
-
-Starter notes are historical. Current implementation status is above;
-the specification supersedes earlier starter hypotheses. Completed-stage agent
-prompts are omitted from the current tree; they remain available in Git history.
+- [Demo](docs/demo/README.md) — presentation assets and synthetic-data provenance
+- [Brand assets](docs/design/brand/README.md) — icon masters and regeneration

@@ -3,6 +3,11 @@
 .AppleDouble
 Thumbs.db
 
+# Local working instructions and planning documents
+/AGENTS.md
+/IMPLEMENTATION_PLAN.md
+/SPEC.md
+
 # Secrets and machine-specific settings
 .env
 .env.*

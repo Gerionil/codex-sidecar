@@ -1,6 +1,6 @@
 # MVP
 
-> Historical product-direction notes. Verified decisions and limitations are now defined in [SPEC.md](../SPEC.md), supported by [research.md](research.md). Illustrative layouts and technical hypotheses below are not live capability claims.
+> Historical product-direction notes. Current behavior and limitations are described in the [README](../README.md), supported by [research.md](research.md) and [validation.md](validation.md). Illustrative layouts and technical hypotheses below are not live capability claims.
 
 ## Goal
 

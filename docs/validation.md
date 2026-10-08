@@ -1,5 +1,16 @@
 # Validation record
 
+## 2026-10-08 — Local working documents
+
+AGENTS.md, IMPLEMENTATION_PLAN.md and SPEC.md are retained locally, excluded by
+root-level .gitignore entries, and removed from Git tracking. Previous versions
+remain in Git history. README lists installation, release notes, research,
+validation, demo and brand documentation. Public documentation links to the
+local-only files were replaced with current public references.
+
+Verified local file preservation, ignore rules, index removal, public Markdown
+link targets and git diff --check. No application code or release asset changed.
+
 ## 2026-10-08 — Public demo and README follow-up
 
 Prepared a 25-second interface tour from the previously inspected synthetic

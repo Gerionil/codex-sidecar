@@ -1,6 +1,6 @@
 # Architecture Notes
 
-> Historical product-direction notes. Verified decisions and limitations are now defined in [SPEC.md](../SPEC.md), supported by [research.md](research.md). Illustrative layouts and technical hypotheses below are not live capability claims.
+> Historical product-direction notes. Current behavior and limitations are described in the [README](../README.md), supported by [research.md](research.md) and [validation.md](validation.md). Illustrative layouts and technical hypotheses below are not live capability claims.
 
 This document contains hypotheses, not final decisions.
 
@@ -170,7 +170,7 @@ Updated from empirical research on 2026-10-07: there is no required fixed
 10,080-minute primary window, null secondary and no additional/model-specific
 buckets. This is a dated returned shape, not a permanent account guarantee.
 See [the follow-up investigation](research.md#31-dynamic-window-recheck-and-installed-raw-shape)
-and [SPEC.md](../SPEC.md) for verified behavior.
+and [README](../README.md) for verified behavior.
 
 Keep quota retrieval separate and expose a dynamic snapshot:
 
@@ -364,7 +364,7 @@ Cons:
 
 - more moving parts than native Swift for a macOS-only MVP
 
-The authoritative decision and scope are recorded in [SPEC.md](../SPEC.md).
+The authoritative decision and scope are recorded in [README](../README.md).
 
 ## Security
 
