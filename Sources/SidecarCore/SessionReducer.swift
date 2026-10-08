@@ -22,6 +22,8 @@ public struct DerivedTask: Equatable, Sendable {
 }
 
 public struct DerivedSession: Equatable, Sendable {
+    /// Selected owner carried to consumers, including empty / unavailable snapshots.
+    public internal(set) var owningThreadID: String? = nil
     public let requests: [ObservedRequest]
     public let tasks: [DerivedTask]
     public let totals: TokenUsage
@@ -187,7 +189,7 @@ public struct SessionReducer {
         if let input = totals.input, input > 0, let cached = totals.cachedInput {
             cacheRate = 100 * Double(cached) / Double(input)
         } else { cacheRate = nil }
-        return DerivedSession(requests: requests, tasks: tasks, totals: totals, cacheHitPercent: cacheRate,
+        return DerivedSession(owningThreadID: owningThreadID, requests: requests, tasks: tasks, totals: totals, cacheHitPercent: cacheRate,
             reconciliation: reconciliation, context: ContextState.reduce(filtered, requests: requests),
             unattributedTools: tools.filter { $0.requestKey == nil }, quarantinedKeys: quarantinedKeys,
             diagnostics: diagnostics)
