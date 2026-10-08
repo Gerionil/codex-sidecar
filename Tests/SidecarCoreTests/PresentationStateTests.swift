@@ -140,7 +140,7 @@ final class PresentationStateTests: XCTestCase {
         XCTAssertTrue(f.store.sessionStatus.contains("No local chats"))
         await f.store.stop()
     }
-    func testRequestPagingNeverRendersMoreThan100Rows() throws {
+    func testRequestPagingShowsFiveNewestRowsWithoutSkippingHistory() throws {
         var state = try session("native-two-requests")
         let r = state.requests[0]
         state = DerivedSession(requests: (0..<205).map { i in
@@ -148,9 +148,44 @@ final class PresentationStateTests: XCTestCase {
                 rootTaskID: nil, runtimeSessionID: nil, timestamp: nil, source: r.source, configuredModel: nil, tools: [])
         }, tasks: [], totals: state.totals, cacheHitPercent: nil, reconciliation: state.reconciliation,
            context: state.context, unattributedTools: [], quarantinedKeys: [], diagnostics: [])
-        XCTAssertEqual(RequestPage(session: state, page: 0).rows.count, 100)
-        XCTAssertEqual(RequestPage(session: state, page: 1).rows.first?.key.responseID, "r104")
-        XCTAssertEqual(RequestPage(session: state, page: 2).rows.count, 5)
+        XCTAssertEqual(RequestPage(session: state, page: 0).rows.count, 5)
+        XCTAssertEqual(RequestPage(session: state, page: 1).rows.first?.key.responseID, "r199")
+        XCTAssertEqual(RequestPage(session: state, page: 40).rows.count, 5)
+        XCTAssertEqual(RequestPage(session: state, page: -1).rows.first?.key.responseID, "r204")
+        XCTAssertEqual(RequestPage(session: state, page: .max).rows.last?.key.responseID, "r0")
+        let keys = (0..<41).flatMap { RequestPage(session: state, page: $0).rows.map(\.key) }
+        XCTAssertEqual(Set(keys).count, 205)
+        XCTAssertFalse(RequestPage(session: state, page: 40).hasEarlier)
+    }
+    func testDetailPagesClampAndCoverAllRowsInGroupsOfTwenty() {
+        let values = Array(0..<45)
+        XCTAssertEqual(DetailPage(values, page: -1).rows, Array(0..<20))
+        XCTAssertEqual(DetailPage(values, page: 1).rows, Array(20..<40))
+        let last = DetailPage(values, page: .max)
+        XCTAssertEqual(last.index, 2); XCTAssertEqual(last.rows, Array(40..<45))
+        XCTAssertFalse(last.hasNext); XCTAssertTrue(last.hasPrevious)
+        XCTAssertEqual(DetailPage([Int](), page: 7).pageCount, 1)
+        XCTAssertTrue(DetailPage([Int](), page: 7).rows.isEmpty)
+    }
+    func testChatSearchPreservesOrderAndMatchesStoredLabelsAndIDs() {
+        let a = SessionDescriptor(id: "synthetic-a", sourceURLs: [], projectName: "Demo", cliVersion: nil,
+                                  lastActivity: nil, parentThreadID: nil, title: "Parser work")
+        let b = SessionDescriptor(id: "synthetic-b", sourceURLs: [], projectName: "Other", cliVersion: nil,
+                                  lastActivity: nil, parentThreadID: nil, title: "Parser work")
+        let labels = PresentationText.descriptors([b, a])
+        let text = PresentationText.catalogText([b, a])
+        XCTAssertEqual(text.labels, labels)
+        XCTAssertEqual(text.titles[a.id], "Parser work")
+        let duplicate = SessionDescriptor(id: "unique-c", sourceURLs: [], projectName: "Demo", cliVersion: nil,
+                                         lastActivity: nil, parentThreadID: nil, title: "Parser work")
+        let duplicates = PresentationText.catalogText([a, duplicate])
+        XCTAssertNotEqual(duplicates.titles[a.id], duplicates.titles[duplicate.id])
+        XCTAssertEqual(duplicates.titles[a.id], "Parser work (\(String(a.id.prefix(8))))")
+        XCTAssertEqual(PresentationText.matchingChats([b, a], labels: labels, query: " parser ").map(\.id), [b.id, a.id])
+        XCTAssertEqual(PresentationText.matchingChats([b, a], labels: labels, query: "DEMO").map(\.id), [a.id])
+        XCTAssertEqual(PresentationText.matchingChats([b, a], labels: labels, query: "synthetic-b").map(\.id), [b.id])
+        XCTAssertEqual(PresentationText.matchingChats([b, a], labels: labels, query: "  ").count, 2)
+        XCTAssertTrue(PresentationText.matchingChats([b, a], labels: labels, query: "missing").isEmpty)
     }
     func testOfflineChangedWhileRuntimeIsBeingCreatedPreventsQuotaStart() async throws {
         let gate = RuntimeGate()

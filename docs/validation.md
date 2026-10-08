@@ -1,5 +1,42 @@
 # Validation record
 
+## 2026-10-08 — Approved searchable chat selection and compact activity
+
+The owner reported an extra submenu in the previous selector and excessive
+activity scrolling, then approved a single searchable popover, five completed
+requests per page and initially collapsed activity lists with twenty records per
+page. Implemented both shared selectors using the existing read-only catalog.
+Search matches prepared labels and IDs, preserves catalog order and does not
+change selection until a chat is chosen. Titles reuse the existing collision-safe
+identity formatting, prepared once off the UI actor. Unknown provenance stays
+explicit. No new source, persistence, provider restart or token accounting.
+
+Task count and lifecycle summary remain visible. Tasks and unattributed calls
+expand separately; associated calls inside an expanded request also use collapsed
+pagination. Detail pages clamp safely after data shrink and reset with selected
+chat identity. Request history remains reachable in newest-first five-row pages.
+
+Fresh full suite: **196 tests, 0 failures**. Added search/order/ID and duplicate
+title regressions, bounded twenty-row page coverage/clamping, and five-request
+history coverage including negative/oversized page indices. RED confirmed missing
+search/paging APIs before implementation. The first full run had one failure in
+the unchanged quota retry-timing test (manual refresh count 5 instead of 6);
+isolated rerun and the final full run passed. This remains an intermittent timing
+observation, not evidence of a quota-product fix.
+
+Release/package exited 0; Info.plist valid and executable arm64. Independent
+review found title-disambiguation and ambiguous-provenance presentation issues;
+both were fixed and repeat review approved. `git diff --check` passed. Synthetic
+offscreen native captures of the searchable list (36 invented chats), collapsed
+activity, twenty-action page and light/dark/narrow surfaces were inspected.
+No real chat content, credentials, quota process or visible app window was used.
+
+Current-Mac native interaction recheck is pending: search typing, picking a chat
+from either surface, Escape dismissal and activity pagination. Offscreen renders
+do not verify those interactions. Keyboard/VoiceOver and naturally completed
+real-response append remain **NOT VERIFIED**. No Intel/macOS 14 runtime claim,
+user-app termination, push or merge.
+
 ## 2026-10-08 — Owner-approved Codex-inspired appearance
 
 Implemented the approved flat light/dark interface and System/Light/Dark local

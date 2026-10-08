@@ -446,6 +446,17 @@ Transparency is disabled; macOS 14–15 use bordered controls. No glass data car
 or dependency/ownership/accounting changes. Appearance changes do not restart
 providers. All numbers remain selectable and standard controls remain accessible.
 
+Owner-approved compact browsing follow-up (2026-10-08): chat selection opens a
+single bounded-height searchable popover shared by both surfaces. Stored chat
+title (with identity disambiguation when needed) appears above project/activity
+and explicit provenance. Search preserves catalog ordering and pinned selection.
+Completed requests render five newest-first per page. Task counts and lifecycle
+status remain visible; task records and unattributed tool calls are collapsed
+initially with twenty records per page. Associated calls inside each request use
+the same collapsed pagination. Summaries describe observed activity only and do
+not assign token costs to individual calls. Search and disclosure/page state stay
+in memory; no new persisted fields or data sources.
+
 Raw bytes exist only transiently for parsing; normalized state retains numeric
 metrics, opaque identities, local source cursor, project basename, optional stored
 chat title, public tool

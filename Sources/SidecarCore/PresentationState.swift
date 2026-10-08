@@ -2,6 +2,13 @@ import Foundation
 
 /// Display values preserve missing counters and all scope distinctions.
 public enum PresentationText {
+    public static func matchingChats(_ sessions: [SessionDescriptor], labels: [String: String], query: String) -> [SessionDescriptor] {
+        let term = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !term.isEmpty else { return sessions }
+        return sessions.filter {
+            (labels[$0.id] ?? "").localizedCaseInsensitiveContains(term) || $0.id.localizedCaseInsensitiveContains(term)
+        }
+    }
     public static func number(_ value: Int64?) -> String { value.map { $0.formatted() } ?? "Unavailable" }
     public static func percent(_ value: Double?) -> String {
         value.map { $0.formatted(.number.precision(.fractionLength(0...2))) + "%" } ?? "Unavailable"
@@ -42,6 +49,9 @@ public enum PresentationText {
     }
     /// Prepare a whole catalog once, avoiding a full peer scan for every native menu row.
     public static func descriptors(_ sessions: [SessionDescriptor]) -> [String: String] {
+        catalogText(sessions).labels
+    }
+    public static func catalogText(_ sessions: [SessionDescriptor]) -> (labels: [String: String], titles: [String: String]) {
         struct NameKey: Hashable { let project: String?; let title: String }
         var nameCounts: [NameKey: Int] = [:]
         for s in sessions {
@@ -70,6 +80,7 @@ public enum PresentationText {
             }
         }
         var labels: [String: String] = [:]
+        var titles: [String: String] = [:]
         let formatter = selectorFormatter(timeZone: .current)
         let now = Date()
         for s in sessions {
@@ -80,8 +91,9 @@ public enum PresentationText {
             let provenance = s.provenanceAmbiguous ? "Ambiguous provenance" : (s.parentThreadID == nil ? "Root" : "Child")
             let activity = compactTime(s.lastActivity, now: now, formatter: formatter)
             labels[s.id] = "\(s.projectName ?? "Unknown project") · \(name) · \(provenance) · \(activity)"
+            titles[s.id] = name
         }
-        return labels
+        return (labels, titles)
     }
     public static func failure(_ f: QuotaFailure) -> String {
         switch f {
@@ -164,14 +176,31 @@ public struct QuotaPresentation {
     }
 }
 public struct RequestPage {
+    public static let size = 5
     public let rows: [ObservedRequest]
     public let hasEarlier: Bool
     public let hasNewer: Bool
     public init(session: DerivedSession?, page: Int) {
         let requests = session?.requests ?? []
-        let end = max(0, requests.count - max(0, page) * 100)
-        let start = max(0, end - 100)
+        let safePage = min(max(0, page), max(0, requests.count - 1) / Self.size)
+        let end = max(0, requests.count - safePage * Self.size)
+        let start = max(0, end - Self.size)
         rows = Array(requests[start..<end].reversed())
-        hasEarlier = start > 0; hasNewer = page > 0
+        hasEarlier = start > 0; hasNewer = safePage > 0
+    }
+}
+
+public struct DetailPage<Value> {
+    public static var size: Int { 20 }
+    public let rows: [Value]
+    public let index: Int
+    public let pageCount: Int
+    public var hasPrevious: Bool { index > 0 }
+    public var hasNext: Bool { index + 1 < pageCount }
+    public init(_ values: [Value], page: Int) {
+        pageCount = max(1, (values.count + Self.size - 1) / Self.size)
+        index = min(max(0, page), pageCount - 1)
+        let start = index * Self.size
+        rows = Array(values[start..<min(values.count, start + Self.size)])
     }
 }

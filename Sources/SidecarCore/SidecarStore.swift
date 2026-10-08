@@ -84,6 +84,7 @@ public struct SidecarRuntime: Sendable {
 public final class SidecarStore: ObservableObject {
     public typealias Factory = @Sendable (LocalSettings) async -> SidecarRuntime
     public private(set) var sessionLabels: [String: String] = [:]
+    public private(set) var sessionTitles: [String: String] = [:]
     @Published public private(set) var sessions: [SessionDescriptor] = []
     @Published public private(set) var catalogStatus: SessionCatalog.Status?
     @Published public private(set) var session: DerivedSession?
@@ -148,7 +149,7 @@ public final class SidecarStore: ObservableObject {
         runtime = nil; providerStart = nil
         subscriptions.forEach { $0.cancel() }; subscriptions.removeAll()
         starts?.cancel()
-        session = nil; sessionLabels = [:]; sessions = []; catalogStatus = nil; quota = settings.offline ? .unavailable(.offline) : .loading
+        session = nil; sessionLabels = [:]; sessionTitles = [:]; sessions = []; catalogStatus = nil; quota = settings.offline ? .unavailable(.offline) : .loading
         requestPage = 0; compatibility = "Executable not verified"
         let captured = settings, factory = factory
         let task = Task { [weak self] in
@@ -170,10 +171,10 @@ public final class SidecarStore: ObservableObject {
             self.subscriptions = [
                 Task { [weak self] in
                     for await items in catalogStream {
-                        let labels = await Task.detached(priority: .utility) { PresentationText.descriptors(items) }.value
+                        let text = await Task.detached(priority: .utility) { PresentationText.catalogText(items) }.value
                         let status = await new.catalog.lastStatus
                         guard let self, !Task.isCancelled, self.generation == epoch else { break }
-                        self.sessionLabels = labels; self.sessions = items; self.catalogStatus = status
+                        self.sessionLabels = text.labels; self.sessionTitles = text.titles; self.sessions = items; self.catalogStatus = status
                         if self.session == nil, let id = self.selectedID, let descriptor = items.first(where: { $0.id == id }) {
                             await new.reader.select(descriptor)
                         }
@@ -184,7 +185,7 @@ public final class SidecarStore: ObservableObject {
                         guard let self, !Task.isCancelled, self.generation == epoch else { break }
                         guard value.owningThreadID == self.selectedID else { continue }
                         self.session = value
-                        if self.requestPage * 100 >= value.requests.count { self.requestPage = 0 }
+                        if self.requestPage * RequestPage.size >= value.requests.count { self.requestPage = 0 }
                     }
                 },
                 Task { [weak self] in

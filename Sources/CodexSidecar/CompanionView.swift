@@ -44,14 +44,7 @@ struct CompanionView: View {
                 }
                 if let session = store.session {
                     Divider()
-                    Text("Task activity").font(.headline)
-                    ForEach(Array(SessionPresentation(session).taskActivity.enumerated()), id: \.offset) { _, text in
-                        Text(text).font(.caption).textSelection(.enabled)
-                    }
-                    if !session.unattributedTools.isEmpty {
-                        Text("Unattributed task activity — no individual token cost").font(.subheadline)
-                        ForEach(Array(session.unattributedTools.enumerated()), id: \.offset) { _, tool in ToolRow(tool: tool) }
-                    }
+                    TaskActivityView(session: session).id(store.selectedID)
                 }
             }.frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -60,25 +53,24 @@ struct CompanionView: View {
 
 struct ChatSelector: View {
     @ObservedObject var store: SidecarStore
+    @State private var showingChats = false
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Selected chat").font(.caption).foregroundStyle(.secondary)
-            Menu {
-                Picker("Selected chat", selection: Binding(get: { store.selectedID ?? "" }, set: { value in
-                    Task { await store.selectSession(id: value) }
-                })) {
-                    Text("Choose a chat").tag("")
-                    if let id = store.selectedID, !store.sessions.contains(where: { $0.id == id }) {
-                        Text("Pinned chat · Sources unavailable").tag(id)
-                    }
-                    ForEach(store.sessions, id: \.id) { Text(store.sessionLabels[$0.id] ?? "Unavailable").tag($0.id) }
-                }
-            } label: {
-                Text(store.selectedDescriptor?.title ?? store.selectedDescriptor.map { String($0.id.prefix(8)) }
-                     ?? (store.selectedID == nil ? "Choose a chat" : "Pinned chat unavailable"))
-                    .lineLimit(1).truncationMode(.middle).frame(maxWidth: .infinity, alignment: .leading)
+            Button { showingChats = true } label: {
+                HStack {
+                    Text(store.selectedDescriptor?.title ?? store.selectedDescriptor.map { String($0.id.prefix(8)) }
+                         ?? (store.selectedID == nil ? "Choose a chat" : "Pinned chat unavailable"))
+                        .lineLimit(1).truncationMode(.middle)
+                    Spacer(minLength: 8)
+                    Image(systemName: "chevron.down").font(.caption)
+                }.frame(maxWidth: .infinity, alignment: .leading)
             }
-            .menuStyle(.borderedButton)
+            .buttonStyle(.bordered)
+            .popover(isPresented: $showingChats, arrowEdge: .bottom) {
+                ChatBrowser(store: store) { showingChats = false }
+                    .preferredColorScheme(store.settings.appearance.colorScheme)
+            }
             .accessibilityLabel("Selected chat")
             .accessibilityValue(store.selectedID.flatMap { store.sessionLabels[$0] } ?? "No chat selected")
             if let descriptor = store.selectedDescriptor {
@@ -243,7 +235,9 @@ struct RequestDetail: View {
             MetricRow(title: "Configured model (task provenance)", value: request.configuredModel?.model ?? "Unavailable")
             Text("Tool association confidence: \(request.tools.contains(where: \.isAmbiguous) ? "Ambiguous" : "Stream-order association only")").font(.caption)
             Text("\(request.tools.count) associated tool calls; no individual token costs").font(.caption)
-            ForEach(Array(request.tools.enumerated()), id: \.offset) { _, tool in ToolRow(tool: tool) }
+            DisclosureGroup("Tool calls (\(request.tools.count))") {
+                PagedDetails(values: request.tools) { ToolRow(tool: $0) }
+            }.font(.caption)
         }
     }
 }

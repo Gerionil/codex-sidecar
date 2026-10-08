@@ -670,3 +670,13 @@ theme switching and accessibility acceptance remain pending in docs/validation.m
 Ruling: explicit permission to implement the reviewed mockup authorizes this
 bounded follow-up without a second implementation approval; current branch reuse
 follows AGENTS.md. No Codex configuration or real transcript inspection is needed.
+
+## Owner-approved compact browsing follow-up — 2026-10-08
+
+Approved in chat: replace the nested selector with a searchable popover of fixed
+height; preserve catalog order, unique identity labels and shared selection.
+Show five completed requests per page. Keep activity counts/status visible and
+collapse task/tool details initially, with twenty records per page. Preserve
+unknown provenance and per-call token-cost limitations. Verify search/pagination
+synthetically, inspect native renders, obtain independent review and rebuild the
+local package. Continue on the existing stage branch; no push or merge.

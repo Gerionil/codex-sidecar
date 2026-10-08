@@ -67,6 +67,11 @@ precedence is explicit override, inherited `CODEX_HOME`, then the current user's
 `.codex` directory. A GUI launch may not inherit the shell environment. The same
 resolved root is supplied to session discovery and the owned quota process.
 
+Selected chat opens one searchable popover with recent catalog ordering and
+stored names. The companion displays five completed requests per page. Activity
+starts as a count/status summary; tasks, unattributed calls and associated calls
+expand separately, twenty records per page. All history remains reachable.
+
 Executable discovery uses an explicit override, safe absolute PATH entries, then
 recognized installed application bundles. Sidecar runs a bounded `--version`
 verification without a shell before using an executable. Missing or unverifiable
