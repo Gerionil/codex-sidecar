@@ -1,5 +1,13 @@
 # Validation record
 
+## 2026-10-08 — Owner confirms live Dock icon
+
+The owner confirms that the selected icon is now visible in the live Dock,
+as well as the menu bar. The Dock visual acceptance item is closed on the
+current Mac. The combined XCTest version-probe wait remains unresolved; natural
+response updates on both surfaces were not specifically observed in the
+automated run. VoiceOver remains excluded by the owner.
+
 ## 2026-10-08 — Live Dock icon follow-up
 
 The owner's screenshot shows a generic application tile in the live Dock while

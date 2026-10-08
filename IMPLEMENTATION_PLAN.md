@@ -736,3 +736,10 @@ ICNS to NSApplication.applicationIconImage at launch. Release/package and an
 AppKit live-image rendering probe passed. Direct Dock binding timed out; owner
 visual recheck remains pending. Earlier NSWorkspace lookup is not proof of the
 live Dock tile. No settings or accounting change.
+
+
+The owner confirms the selected logo is visible in the live Dock and menu bar.
+The Dock visual follow-up is closed on the current Mac. Next recommended work:
+investigate the combined-suite version-probe wait, refresh final acceptance
+status, and retain the explicitly unverified both-surface natural-update check.
+VoiceOver and Intel checks are not required in the owner's current scope.

@@ -8,13 +8,14 @@ SwiftUI and Foundation; no third-party runtime dependencies or metrics database.
 
 Stages 1–5 are implemented and locally merged. Stage 6 adds installed-profile
 numeric validation, repository hygiene review and operating documentation.
-The owner completed the supplied native manual checklist on the current Mac,
-except keyboard navigation, VoiceOver and real completed-response live append.
-Native acceptance therefore remains **incomplete**. The automated computer-use
-channel failed before providing an accessibility tree or screenshot; the manual
-results are recorded separately as owner-reported evidence. See the dated
-[validation record](docs/validation.md) for checks, limitations and the historical
-Stage 5 default-root launch incident.
+The owner and subsequent native checks cover the current Mac's UI, keyboard
+navigation, Offline recovery, normal launch/Quit and companion live updates.
+The owner confirms menu-panel functionality, theme switching and the Dock/menu
+icons. VoiceOver is excluded by the owner. Acceptance remains **incomplete**:
+the combined test suite stalls in the existing CLI version-probe wait, although
+all tests pass in separate 195 + 3 runs; simultaneous natural-response updates on
+both surfaces were not specifically observed. See the dated
+[validation record](docs/validation.md) for exact scope and historical findings.
 
 The freshly checked CLI profile is **0.160.1** on Apple Silicon macOS 27.0.1.
 The declared deployment floor is macOS 14; macOS 14 and Intel runtime support
