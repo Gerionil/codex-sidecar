@@ -1,5 +1,24 @@
 # Validation record
 
+## 2026-10-08 — Approved compact selector dates
+
+The owner approved `dd.MM HH:mm` in selector labels, with `.yy` added for a
+different local Gregorian year. Full locale-formatted date, seconds and time zone
+remain selectable under the chosen chat on both surfaces. Existing sorting,
+identity, pinning and quota logic are unchanged. Batch label preparation reuses
+one formatter off the UI actor. The new regression covers missing dates, the same
+instant across a local New Year in UTC/+03:00 and actual compact selector output.
+
+Fresh verification: full `swift test --disable-sandbox` **191 tests, 0 failures**;
+release build/package exit 0; valid Info.plist and arm64 Mach-O bundle. Ten thousand
+shared-prefix label preparation took 0.0237 s. Independent read-only review found
+no material issues; `git diff --check` passed. RED initially established the absent
+compact-date API. An initial test incorrectly assumed the full date's UTC year;
+this was corrected to respect the local time zone, without changing full-date
+formatting. Native acceptance of the new shorter label remains pending. Keyboard,
+VoiceOver and naturally completed real-response append remain unverified. No
+real-data probe, user-app termination, push or merge was performed.
+
 ## 2026-10-08 — Owner-approved selector refinement
 
 Implemented on the existing `stage/6-validation` branch after the owner approved

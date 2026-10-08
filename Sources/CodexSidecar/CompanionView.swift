@@ -72,6 +72,7 @@ struct ChatSelector: View {
             Text("Manual selection · Pinned until changed").font(.caption).foregroundStyle(.secondary)
             if let descriptor = store.selectedDescriptor {
                 Text(store.sessionLabels[descriptor.id] ?? "Unavailable").font(.caption).textSelection(.enabled)
+                Text("Last activity: \(PresentationText.time(descriptor.lastActivity))").font(.caption).textSelection(.enabled)
                 Text("Log profile: \(descriptor.cliVersion ?? "Unknown") · Internal version-sensitive format").font(.caption).foregroundStyle(.secondary)
             }
             Text(store.sessionStatus).font(.caption)

@@ -91,7 +91,9 @@ the same project include an ID suffix. Roots come first, then children; each gro
 sorts by newest known activity, with stable ID ties. Activity uses the newer of
 source modification time and valid indexed update time, so it is a heuristic.
 An unavailable, symlinked or over-16-MiB index falls back to IDs; names above 4 KiB
-and malformed entries are skipped. Index names refresh during catalog discovery.
+and malformed entries are skipped. Index names refresh during catalog discovery. Selector dates use `dd.MM HH:mm`
+in the local time zone, adding a two-digit year for other years. Seconds and time
+zone labels remain available in the selected chat details.
 The owner-reported manual pass predates this selector refinement; repeat selector
 layout and shared-selection checks on the rebuilt app.
 Selection stays pinned until changed; recent activity is a suggestion, not

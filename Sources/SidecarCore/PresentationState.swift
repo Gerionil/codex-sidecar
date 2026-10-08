@@ -12,6 +12,24 @@ public enum PresentationText {
         formatter.dateStyle = .medium; formatter.timeStyle = .medium
         return formatter.string(from: date) + " " + (TimeZone.current.abbreviation(for: date) ?? TimeZone.current.identifier)
     }
+    public static func compactTime(_ date: Date?, now: Date = Date(), timeZone: TimeZone = .current) -> String {
+        compactTime(date, now: now, formatter: selectorFormatter(timeZone: timeZone))
+    }
+    private static func selectorFormatter(timeZone: TimeZone) -> DateFormatter {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        formatter.calendar = calendar; formatter.timeZone = timeZone
+        return formatter
+    }
+    private static func compactTime(_ date: Date?, now: Date, formatter: DateFormatter) -> String {
+        guard let date else { return "Unavailable" }
+        let calendar = formatter.calendar!
+        formatter.dateFormat = calendar.component(.year, from: date) == calendar.component(.year, from: now)
+            ? "dd.MM HH:mm" : "dd.MM.yy HH:mm"
+        return formatter.string(from: date)
+    }
     public static func descriptor(_ s: SessionDescriptor, peers: [SessionDescriptor] = []) -> String {
         descriptors(peers.contains(where: { $0.id == s.id }) ? peers : peers + [s])[s.id] ?? "Unavailable"
     }
@@ -45,17 +63,15 @@ public enum PresentationText {
             }
         }
         var labels: [String: String] = [:]
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium; formatter.timeStyle = .medium
+        let formatter = selectorFormatter(timeZone: .current)
+        let now = Date()
         for s in sessions {
             let identity = identities[s.id] ?? s.id
             let name = s.title.map { title in
                 nameCounts[NameKey(project: s.projectName, title: title), default: 0] > 1 ? "\(title) (\(identity))" : title
             } ?? identity
             let provenance = s.provenanceAmbiguous ? "Ambiguous provenance" : (s.parentThreadID == nil ? "Root" : "Child")
-            let activity = s.lastActivity.map {
-                formatter.string(from: $0) + " " + (TimeZone.current.abbreviation(for: $0) ?? TimeZone.current.identifier)
-            } ?? "Unavailable"
+            let activity = compactTime(s.lastActivity, now: now, formatter: formatter)
             labels[s.id] = "\(s.projectName ?? "Unknown project") · \(name) · \(provenance) · \(activity)"
         }
         return labels

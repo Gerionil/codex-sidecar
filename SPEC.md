@@ -352,6 +352,8 @@ chat detection. Use project basename and an optional stored `thread_name` joined
 by session ID from the selected root's `session_index.jsonl`; never derive a title
 from transcript or prompt text. Missing/invalid metadata falls back to a short,
 distinguishable identity. Duplicate names within a project add an identity suffix.
+Selector dates use local `dd.MM HH:mm`, adding `.yy` for a different local year;
+full date/seconds/time zone remain in selected chat details.
 The optional index uses bounded reads (16 MiB total, 4 KiB title), skips malformed
 complete entries and ignores an incomplete tail. Over-limit/unavailable/symlink
 indexes fall back without hiding discovered chats. Most recent valid timestamp

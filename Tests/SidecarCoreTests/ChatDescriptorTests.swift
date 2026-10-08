@@ -41,4 +41,19 @@ final class ChatDescriptorTests: XCTestCase {
         print("SELECTOR_MEASURE labels=10000 seconds=\(elapsed)")
     }
 
+    func testCompactDatePreservesYearAcrossLocalNewYearAndMissingDate() throws {
+        let iso = ISO8601DateFormatter()
+        let now = try XCTUnwrap(iso.date(from: "2026-01-01T00:30:00Z"))
+        let old = try XCTUnwrap(iso.date(from: "2025-12-31T22:45:00Z"))
+        let utc = try XCTUnwrap(TimeZone(secondsFromGMT: 0))
+        let plusThree = try XCTUnwrap(TimeZone(secondsFromGMT: 3 * 3600))
+        XCTAssertEqual(PresentationText.compactTime(old, now: now, timeZone: utc), "31.12.25 22:45")
+        XCTAssertEqual(PresentationText.compactTime(old, now: now, timeZone: plusThree), "01.01 01:45")
+        XCTAssertEqual(PresentationText.compactTime(nil, now: now, timeZone: utc), "Unavailable")
+        let item = SessionDescriptor(id: "synthetic-date", sourceURLs: [], projectName: "Project",
+            cliVersion: nil, lastActivity: old, parentThreadID: nil, title: "Chat")
+        let label = PresentationText.descriptor(item)
+        XCTAssertNotNil(label.range(of: #" · [0-9]{2}\.[0-9]{2}(\.[0-9]{2})? [0-9]{2}:[0-9]{2}$"#, options: .regularExpression))
+    }
+
 }
