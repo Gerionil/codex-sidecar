@@ -167,6 +167,41 @@ failures. A past reset is a refresh hint, not proof that usage or permission res
 Cross-process notification delivery and real account-change behavior remain
 unverified; deterministic fake-transport tests cover these state transitions.
 
+## Support development
+
+Codex Sidecar is free and open source. If you find it useful, you can support
+development with a voluntary crypto donation. Donations do not unlock features
+or include support commitments.
+
+Choose the exact asset and network below. Each QR code contains only the receiving
+address; select the matching asset and network in your wallet before sending.
+
+| Asset | Network | Receiving address |
+| --- | --- | --- |
+| USDT | **TRON (TRC20)** | `TSS5oAt4d4tBLCjr65prTifbxtTe28tuHX` |
+| USDC | **Base** | `0x8bf736e7eA5022B09FECe2883052f3d8cE54cB4b` |
+| BTC | **Bitcoin** | `bc1q7f7an2zj78zqf6kf275cdvh6az00c5pvdd4lye` |
+| LTC | **Litecoin** | `ltc1qqcn7xnefm0zs0nf62w7x4rk3grylzg0hm5a78d` |
+
+<table>
+  <tr>
+    <th>USDT · TRON (TRC20)</th>
+    <th>USDC · Base</th>
+  </tr>
+  <tr>
+    <td><img src="docs/donations/usdt-tron.png" width="180" height="180" alt="USDT receiving address QR code — TRON (TRC20) only"></td>
+    <td><img src="docs/donations/usdc-base.png" width="180" height="180" alt="USDC receiving address QR code — Base only"></td>
+  </tr>
+  <tr>
+    <th>BTC · Bitcoin</th>
+    <th>LTC · Litecoin</th>
+  </tr>
+  <tr>
+    <td><img src="docs/donations/btc-bitcoin.png" width="180" height="180" alt="BTC receiving address QR code — Bitcoin only"></td>
+    <td><img src="docs/donations/ltc-litecoin.png" width="180" height="180" alt="LTC receiving address QR code — Litecoin only"></td>
+  </tr>
+</table>
+
 ## Project references
 
 - [Specification](SPEC.md) — approved product and accounting boundaries
