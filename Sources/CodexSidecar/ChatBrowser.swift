@@ -46,7 +46,7 @@ struct ChatBrowser: View {
             }
             Text("\(matches.count) chats · Recent activity first within roots and children")
                 .font(.caption).foregroundStyle(.secondary)
-        }.padding(14).frame(width: 360, height: 420)
+        }.padding(14).frame(width: 420, height: 420)
             .modifier(SidecarSurface())
             .onAppear { searchFocused = true }
             .onExitCommand { dismiss() }

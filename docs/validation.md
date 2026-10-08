@@ -1,5 +1,30 @@
 # Validation record
 
+## 2026-10-08 — Wider search and Offline recovery
+
+Owner requested wider search, Offline access at the top of the companion, and
+reported Loading after leaving Offline until manual Refresh. Popover width is
+now 420 points (previously 360); companion toolbar includes a shared-store Offline
+switch. Current allowlisted request metadata has no semantic title field; chat
+titles are catalog metadata. No prompt-derived request titles were introduced.
+
+Root-cause reproduction: synthetic account/updated during a held quota read after
+leaving Offline invalidated its generation, leaving Loading and waiting for the
+ordinary 60-second poll. The new regression failed with no lastGood and one read
+instead of two. Recovery now performs at most one immediate full reread on the
+same process when the pending read was invalidated and state remains Loading.
+Further hints retain scheduled polling; lifecycle, generation and single-flight
+guards still apply. No polling loop or extra process is introduced.
+
+Fresh full suite: **198 tests, 0 failures**. New regressions verify immediate
+resume without Refresh or clock advance, one owned process/single flight, and
+repeated-hint cap followed by scheduled recovery. Independent static review
+approved; release/package exit 0, Info.plist valid, arm64 executable. Wider search
+was inspected with the existing synthetic offscreen harness; toolbar interaction
+and real-process Offline recovery remain pending native recheck. No real data or
+quota probe, user-app restart, push or merge. Existing keyboard/VoiceOver/live
+completed-response acceptance gaps remain; only the current Mac is in scope.
+
 ## 2026-10-08 — Approved searchable chat selection and compact activity
 
 The owner reported an extra submenu in the previous selector and excessive

@@ -57,6 +57,9 @@ public actor QuotaProvider {
         await refresh(now: scheduler.now())
     }
     public func refresh(now: Date) async {
+        await refresh(now: now, recoverInvalidatedRead: true)
+    }
+    private func refresh(now: Date, recoverInvalidatedRead: Bool) async {
         guard !stopped, !offline else { return }
         running = true
         if let flight { await flight.value; return }
@@ -69,6 +72,13 @@ public actor QuotaProvider {
         await withTaskCancellationHandler { await task.value } onCancel: { task.cancel() }
         guard flightID == id else { return }
         flight = nil; flightID = nil
+        // A startup account hint can invalidate a pending read without replacing
+        // its process. Recover once immediately; repeated hints fall back to polling.
+        if recoverInvalidatedRead, epoch != generation, running, !offline, !stopped, !Task.isCancelled,
+           case .loading = state {
+            await refresh(now: scheduler.now(), recoverInvalidatedRead: false)
+            return
+        }
         reschedule()
     }
     private func read(epoch: UInt64) async {

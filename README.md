@@ -71,6 +71,10 @@ Selected chat opens one searchable popover with recent catalog ordering and
 stored names. The companion displays five completed requests per page. Activity
 starts as a count/status summary; tasks, unattributed calls and associated calls
 expand separately, twenty records per page. All history remains reachable.
+Offline is also available at the top of the companion window. If a startup
+account hint invalidates a pending quota read, Sidecar retries once immediately;
+repeated hints use the normal polling schedule. Current metadata contains chat
+titles but no semantic titles for individual completed responses.
 
 Executable discovery uses an explicit override, safe absolute PATH entries, then
 recognized installed application bundles. Sidecar runs a bounded `--version`

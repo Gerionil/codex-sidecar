@@ -680,3 +680,11 @@ collapse task/tool details initially, with twenty records per page. Preserve
 unknown provenance and per-call token-cost limitations. Verify search/pagination
 synthetically, inspect native renders, obtain independent review and rebuild the
 local package. Continue on the existing stage branch; no push or merge.
+
+Owner follow-up: widen the search popover to 420 points, expose Offline in the
+companion toolbar and fix Loading after leaving Offline. Deterministic RED/GREEN
+reproduction covers account hints invalidating an in-flight read; recovery is
+limited to one immediate reread, then scheduled polling. Full suite (198 tests),
+release/package, synthetic render and independent review passed. Real-process
+Offline interaction recheck remains pending. Individual request titles are absent
+from current allowlisted metadata; no transcript-derived labels were added.

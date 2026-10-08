@@ -2,6 +2,52 @@ import XCTest
 @testable import SidecarCore
 
 final class QuotaProviderTests: XCTestCase, @unchecked Sendable {
+    func testLeavingOfflineRecoversAccountHintDuringReadWithoutManualRefresh() async throws {
+        let (p, f, _, factory) = try setup(offline: true)
+        let stream = await p.snapshots()
+        var iterator = stream.makeAsyncIterator()
+        _ = await iterator.next()
+        await f.configure(hold: true)
+        let enabling = Task { await p.setOffline(false) }
+        _ = await iterator.next() // Leaving offline publishes Loading.
+        await quotaEventually { await f.waiting != nil }
+        await f.hint("account/updated")
+        _ = await iterator.next() // Ensure the hint invalidated the in-flight read.
+        await f.configure(hold: false)
+        await f.complete()
+        await enabling.value
+        let state = await p.currentState()
+        XCTAssertNotNil(state.lastGood, "Resume must recover without advancing the clock or pressing Refresh")
+        let reads = await f.reads, processes = await factory.count, maximum = await f.maximumActive
+        XCTAssertEqual(reads, 2); XCTAssertEqual(processes, 1); XCTAssertEqual(maximum, 1)
+        await p.stop()
+    }
+    func testRepeatedAccountHintsLimitImmediateRecoveryAndKeepScheduledPoll() async throws {
+        let (p, f, clock, factory) = try setup(offline: true)
+        let stream = await p.snapshots()
+        var iterator = stream.makeAsyncIterator()
+        _ = await iterator.next()
+        await f.configure(hold: true)
+        let enabling = Task { await p.setOffline(false) }
+        _ = await iterator.next()
+        await quotaEventually { await f.waiting != nil }
+        await f.hint("account/updated"); _ = await iterator.next()
+        await f.complete()
+        await quotaEventually {
+            let reads = await f.reads, waiting = await f.waiting
+            return reads == 2 && waiting != nil
+        }
+        await f.hint("account/updated"); _ = await iterator.next()
+        await f.configure(hold: false); await f.complete(); await enabling.value
+        let reads = await f.reads, processes = await factory.count, busy = await p.isRefreshing
+        XCTAssertEqual(reads, 2); XCTAssertEqual(processes, 1); XCTAssertFalse(busy)
+        await quotaEventually { clock.sleepers > 0 }
+        clock.advance(60)
+        await quotaEventually { await p.currentState().lastGood != nil }
+        let resumedReads = await f.reads
+        XCTAssertEqual(resumedReads, 3)
+        await p.stop()
+    }
     func setup(_ fixture: String = "weekly-only", offline: Bool = false) throws -> (QuotaProvider, QuotaTransportFake, QuotaTestClock, QuotaFactoryFake) {
         let clock = QuotaTestClock(), fake = QuotaTransportFake(quota: try Fixture.data(fixture, ext: "json"))
         let factory = QuotaFactoryFake([fake])

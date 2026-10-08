@@ -18,7 +18,16 @@ struct CompanionView: View {
             }.padding(20)
         }
         .modifier(SidecarSurface())
-        .toolbar { SidecarActions(store: store) }
+        .toolbar {
+            HStack(spacing: 12) {
+                Toggle("Offline", isOn: Binding(get: { store.settings.offline }, set: { value in
+                    Task { await store.setOffline(value) }
+                })).toggleStyle(.switch).controlSize(.small)
+                    .accessibilityLabel("Offline mode")
+                    .help("Pause account quota access; local chat metrics remain available")
+                SidecarActions(store: store)
+            }
+        }
     }
     private var requestList: some View {
         SidecarSection(title: "Recent completed requests") {

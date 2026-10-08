@@ -457,6 +457,13 @@ the same collapsed pagination. Summaries describe observed activity only and do
 not assign token costs to individual calls. Search and disclosure/page state stay
 in memory; no new persisted fields or data sources.
 
+Owner follow-up: search popover width is 420 points; Offline is accessible from
+the companion toolbar as well as panel/settings. An account-generation hint
+during a quota read may invalidate it; perform at most one immediate recovery
+read on the same valid process, then retain ordinary polling/backoff for repeated
+hints. Offline/Stop cancels this recovery. No individual request titles are
+available from the current allowlisted metadata; do not infer them from prompts.
+
 Raw bytes exist only transiently for parsing; normalized state retains numeric
 metrics, opaque identities, local source cursor, project basename, optional stored
 chat title, public tool
