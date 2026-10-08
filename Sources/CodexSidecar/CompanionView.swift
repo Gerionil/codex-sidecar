@@ -93,6 +93,7 @@ struct QuotaSection: View {
                     if let bucket = snapshot.buckets.first(where: { $0.id == store.selectedBucketID }), let alias = bucket.normalModelSlug {
                         Text("Model alias metadata: \(alias)").font(.caption)
                     }
+                    if !store.bucketSelectionStatus.isEmpty { Text(store.bucketSelectionStatus).font(.caption) }
                     if p.windows.isEmpty { Text(store.selectedBucketID == nil ? "Select a limit bucket" : "No windows returned for this bucket").font(.caption) }
                     ForEach(p.windows) { window in
                         VStack(alignment: .leading, spacing: 2) {

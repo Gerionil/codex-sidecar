@@ -88,7 +88,17 @@ public final class SidecarStore: ObservableObject {
     private var stopped = false
     public var selectedID: String? { settings.selectedID }
     public var selectedDescriptor: SessionDescriptor? { sessions.first { $0.id == selectedID } }
-    public var selectedBucketID: String? { settings.bucketID ?? quota.lastGood?.defaultBucketID }
+    public var selectedBucketID: String? {
+        guard let snapshot = quota.lastGood else { return nil }
+        if let pinned = settings.bucketID { return snapshot.buckets.contains { $0.id == pinned } ? pinned : nil }
+        return snapshot.defaultBucketID
+    }
+    public var bucketSelectionStatus: String {
+        if let pinned = settings.bucketID, let snapshot = quota.lastGood, !snapshot.buckets.contains(where: { $0.id == pinned }) {
+            return "Unavailable — Previously selected bucket no longer returned; choose a bucket"
+        }
+        return ""
+    }
     public var page: RequestPage { RequestPage(session: session, page: requestPage) }
     public var sessionStatus: String {
         switch catalogStatus {
@@ -98,7 +108,9 @@ public final class SidecarStore: ObservableObject {
         default: break
         }
         if selectedID == nil { return sessions.isEmpty ? "Unavailable — No local chats found" : "Select a chat manually" }
-        guard let session else { return "Loading selected chat" }
+        guard let session else {
+            return selectedDescriptor == nil ? "Unavailable — Pinned chat sources unavailable" : "Loading selected chat"
+        }
         switch session.sourceAvailability {
         case .unavailable: return "Unavailable — Selected chat sources missing or unreadable"
         case .partial: return "Stale / partial — Some selected sources unavailable"
@@ -117,6 +129,7 @@ public final class SidecarStore: ObservableObject {
     private func replaceRuntime() async {
         generation += 1
         let epoch = generation, previous = transition, old = runtime, starts = providerStart
+        previous?.cancel()
         runtime = nil; providerStart = nil
         subscriptions.forEach { $0.cancel() }; subscriptions.removeAll()
         starts?.cancel()
@@ -132,10 +145,13 @@ public final class SidecarStore: ObservableObject {
             guard self.generation == epoch, !self.stopped else { await new.stop(); return }
             self.runtime = new; self.chosenRoot = new.root.path; self.compatibility = new.compatibility
             await new.quotas.setOffline(self.settings.offline)
+            guard self.generation == epoch, !self.stopped else { await new.stop(); return }
             let catalogStream = await new.catalog.sessions(root: new.root)
+            guard self.generation == epoch, !self.stopped else { await new.stop(); return }
             let readerStream = await new.reader.snapshots()
+            guard self.generation == epoch, !self.stopped else { await new.stop(); return }
             let quotaStream = await new.quotas.snapshots()
-            guard self.generation == epoch, !self.stopped else { return }
+            guard self.generation == epoch, !self.stopped else { await new.stop(); return }
             self.subscriptions = [
                 Task { [weak self] in
                     for await items in catalogStream {
@@ -208,6 +224,7 @@ public final class SidecarStore: ObservableObject {
     public func stop() async {
         guard !stopped else { return }
         stopped = true; generation += 1
+        transition?.cancel()
         subscriptions.forEach { $0.cancel() }; subscriptions.removeAll()
         providerStart?.cancel()
         let old = runtime; runtime = nil

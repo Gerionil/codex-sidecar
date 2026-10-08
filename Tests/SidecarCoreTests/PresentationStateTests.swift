@@ -202,6 +202,73 @@ final class PresentationStateTests: XCTestCase {
         let stopped = await transport.stopped
         XCTAssertGreaterThanOrEqual(stopped, 1)
     }
+    func testShutdownCancelsPendingRuntimeCreationWithoutStartingProviders() async throws {
+        let gate = RuntimeGate()
+        let c = CatalogFake(), r = ReaderFake(), q = ProviderFake()
+        let store = SidecarStore(settings: LocalSettings(), factory: { _ in
+            await gate.wait()
+            return SidecarRuntime(root: URL(fileURLWithPath: "/synthetic"), catalog: c, reader: r, quotas: q, compatibility: "Synthetic")
+        })
+        let start = Task { await store.start() }
+        await eventually { gate.ready }
+        let stop = Task { await store.stop() }
+        await eventually { gate.cancelled }
+        gate.release()
+        await stop.value; await start.value
+        let starts = await q.starts, stops = await q.stops
+        XCTAssertEqual(starts, 0); XCTAssertEqual(stops, 1)
+    }
+    func testPinnedMissingChatDoesNotRemainLoadingForever() async throws {
+        let f = try Harness()
+        await f.store.start(); await f.catalog.send([f.a])
+        await eventually { !f.store.sessions.isEmpty }
+        await f.store.selectSession(id: f.a.id)
+        await f.catalog.send([])
+        await eventually { f.store.sessions.isEmpty }
+        XCTAssertTrue(f.store.sessionStatus.contains("unavailable"))
+        XCTAssertEqual(f.store.selectedID, f.a.id)
+        await f.store.stop()
+    }
+    func testShutdownDuringOfflineSetupDoesNotStartStoppedWorkers() async throws {
+        let f = try Harness(), gate = RuntimeGate()
+        await f.quota.holdOffline(gate)
+        let start = Task { await f.store.start() }
+        await eventually { gate.ready }
+        await f.store.stop()
+        await start.value
+        let catalogStarts = await f.catalog.starts, readerStarts = await f.reader.subscriptions
+        XCTAssertEqual(catalogStarts, 0)
+        XCTAssertEqual(readerStarts, 0)
+    }
+    func testShutdownCleansUpSubscriptionThatCompletesAfterStop() async throws {
+        let f = try Harness(), gate = RuntimeGate(ignoreCancellation: true)
+        await f.catalog.holdStart(gate)
+        let start = Task { await f.store.start() }
+        await eventually { gate.ready }
+        let stop = Task { await f.store.stop() }
+        for _ in 0..<10000 { if await f.catalog.stops > 0 { break }; await Task.yield() }
+        let stoppedCatalog = await f.catalog.stops
+        XCTAssertEqual(stoppedCatalog, 1)
+        gate.release()
+        await stop.value; await start.value
+        let lateStops = await f.catalog.stopsAfterStart
+        let subscriptions = await f.reader.subscriptions
+        XCTAssertEqual(lateStops, 1)
+        XCTAssertEqual(subscriptions, 0)
+    }
+    func testDisappearingBucketRequiresVisibleReselectionWithoutInventedWindows() async throws {
+        let f = try Harness()
+        await f.store.start()
+        f.store.selectBucket(id: "removed-bucket")
+        await f.quota.send(.available(f.quotaSnapshot))
+        await eventually { f.store.quota.lastGood != nil }
+        XCTAssertNil(f.store.selectedBucketID)
+        XCTAssertTrue(f.store.bucketSelectionStatus.contains("Unavailable"))
+        f.store.selectBucket(id: "codex")
+        XCTAssertEqual(f.store.selectedBucketID, "codex")
+        XCTAssertEqual(QuotaPresentation(f.store.quota, bucketID: f.store.selectedBucketID).windows.count, 1)
+        await f.store.stop()
+    }
     private func session(_ name: String) throws -> DerivedSession {
         SessionReducer.reduce(try Fixture.events(name), owningThreadID: Fixture.threadID)
     }
@@ -215,11 +282,13 @@ private actor CatalogFake: SidecarCatalog {
     let stream: AsyncStream<[SessionDescriptor]>
     let continuation: AsyncStream<[SessionDescriptor]>.Continuation
     var lastStatus: SessionCatalog.Status = .available
-    var stops = 0
+    var stops = 0; var starts = 0; var stopsAfterStart = 0
+    var startGate: RuntimeGate?
     init() { (stream, continuation) = AsyncStream.makeStream() }
-    func sessions(root: URL) -> AsyncStream<[SessionDescriptor]> { stream }
+    func holdStart(_ gate: RuntimeGate) { startGate = gate }
+    func sessions(root: URL) async -> AsyncStream<[SessionDescriptor]> { await startGate?.wait(); starts += 1; return stream }
     func send(_ sessions: [SessionDescriptor], status: SessionCatalog.Status = .available) { lastStatus = status; continuation.yield(sessions) }
-    func stop() { stops += 1; continuation.finish() }
+    func stop() { stops += 1; if starts > 0 { stopsAfterStart += 1 }; continuation.finish() }
 }
 private actor ReaderFake: SidecarReader {
     let stream: AsyncStream<DerivedSession>
@@ -236,12 +305,14 @@ private actor ProviderFake: SidecarQuotas {
     let stream: AsyncStream<QuotaState>
     let continuation: AsyncStream<QuotaState>.Continuation
     var starts = 0; var stops = 0; var offline = false
+    var offlineGate: RuntimeGate?
     init() { (stream, continuation) = AsyncStream.makeStream() }
     func snapshots() -> AsyncStream<QuotaState> { stream }
     func start() { starts += 1 }
     func refresh(now: Date) {}
     func wake() {}
-    func setOffline(_ value: Bool) { offline = value; if value { send(.unavailable(.offline)) } }
+    func holdOffline(_ gate: RuntimeGate) { offlineGate = gate }
+    func setOffline(_ value: Bool) async { offline = value; await offlineGate?.wait(); if value { send(.unavailable(.offline)) } }
     func send(_ s: QuotaState) { continuation.yield(s) }
     func stop() { stops += 1; continuation.finish() }
 }
@@ -268,8 +339,18 @@ private struct Harness {
 
 @MainActor
 private final class RuntimeGate: @unchecked Sendable {
+    let ignoreCancellation: Bool
+    init(ignoreCancellation: Bool = false) { self.ignoreCancellation = ignoreCancellation }
     var ready = false
+    var cancelled = false
     var pending: CheckedContinuation<Void, Never>?
-    func wait() async { ready = true; await withCheckedContinuation { pending = $0 } }
+    func wait() async {
+        ready = true
+        await withTaskCancellationHandler {
+            await withCheckedContinuation { pending = $0 }
+        } onCancel: {
+            Task { @MainActor in if !self.ignoreCancellation { self.cancelled = true; self.release() } }
+        }
+    }
     func release() { pending?.resume(); pending = nil }
 }
