@@ -555,8 +555,8 @@ in the redistributed portion, including inherited notices and CodexScope NOTICE
 where applicable. OpenAI source is Apache-2.0; any future source copying requires
 its license/NOTICE review too. No-license candidates grant no assumed reuse right.
 Links and independently expressed architectural lessons do not establish code
-reuse. Sidecar's own license selection remains a release decision before public
-publication.
+reuse. On 2026-10-08, the owner selected MIT for Sidecar, copyright Gerionil;
+see [LICENSE](../LICENSE). Publication remains a separate owner action.
 
 ## 5. Stack evaluation and implications
 

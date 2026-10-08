@@ -761,3 +761,10 @@ final branch review found no blocking findings; stale README acceptance wording
 was corrected. Current-Mac acceptance is complete in the owner's agreed scope.
 VoiceOver is excluded; unsupported metrics and unverified platforms remain honest
 limits. Signing, notarization, license and distribution follow separately.
+
+## Owner-selected project license — 2026-10-08
+
+The owner selected MIT with copyright attribution to Gerionil. Added LICENSE
+and updated current README/research status. Historical Stage 6 license gates
+above describe the earlier state. No publication, push, merge, donation account
+creation or payment configuration is authorized by this license choice.

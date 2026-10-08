@@ -18,8 +18,8 @@ VoiceOver is excluded by the owner. See the dated
 The freshly checked CLI profile is **0.160.1** on Apple Silicon macOS 27.0.1.
 The declared deployment floor is macOS 14; macOS 14 and Intel runtime support
 have not been tested. Windows and Linux are outside this release. This is a local,
-unsigned development build. Publication, license selection, signing and
-notarization require separate owner decisions; no project license is selected.
+unsigned development build. Licensed under [MIT](LICENSE), copyright 2026
+Gerionil. Publication, signing and notarization require separate owner decisions.
 
 ## Build, test and package
 
