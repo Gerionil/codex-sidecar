@@ -702,3 +702,12 @@ surface live-update checks are still unverified because system surfaces could
 not be bound. Repeated AX reads after normal launch found Settings described as
 Refresh; this remains an accessibility finding. See docs/validation.md for scope
 and evidence. Acceptance is not fully closed.
+
+Owner follow-up: VoiceOver is excluded from the current acceptance scope, not
+marked passed. The owner accepts menu-panel functionality except appearance.
+Separated native toolbar items resolve the Settings/Refresh AX naming finding,
+verified after fresh normal launch and by opening Settings. Explicit panel content
+colorScheme follows the selected Light/Dark preference in synthetic renders with
+opposite ambient schemes; System removes the override. Fresh 198-test suite,
+release/package and independent review passed. Native status-item theme recheck
+remains pending; both-surface natural updates were not specifically observed.

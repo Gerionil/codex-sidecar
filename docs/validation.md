@@ -1,5 +1,34 @@
 # Validation record
 
+## 2026-10-08 — Settings name and menu-panel appearance follow-up
+
+The owner explicitly excluded VoiceOver from this acceptance scope and reported
+that the menu panel had already been checked and worked normally, except that it
+did not follow the chosen appearance. Record panel functionality as owner-reported
+acceptance; VoiceOver is **EXCLUDED BY OWNER**, not passed. Synchronized natural
+response updates on both surfaces were not specifically observed in our run.
+
+Separated Refresh and Settings into individual companion toolbar items, with
+control styling and accessibility labels applied independently. After fresh normal
+bundle launch, native AX exposed distinct Description `Refresh` and Description
+`Settings`; clicking Settings opened the preferences window. The previous naming
+finding is resolved. No VoiceOver activation or speech check was performed.
+
+MenuBarExtra now applies the selected Light/Dark scheme directly to its content
+as well as setting the presentation preference. System leaves the environment
+unmodified. Synthetic native panel renders with the opposite ambient color scheme
+were inspected in both themes and showed the selected theme. This verifies content
+rendering; a native status-item panel recheck is still needed to confirm the
+owner's original symptom on that presentation. The system surface remains
+inaccessible to the current automation tool.
+
+Fresh validation: 198 XCTest tests passed with zero failures; release/package
+passed; synthetic light/dark panels inspected; independent review found no
+actionable issues; git diff --check passed. The updated local bundle was launched
+and left running. Appearance, Offline, overrides and selection observed at the
+start of this follow-up were retained. No model request was created for testing,
+no Codex files were modified, and no push or merge was performed.
+
 ## 2026-10-08 — Authorized native interaction acceptance on the current Mac
 
 The owner explicitly authorized Sidecar interaction, temporary settings changes,

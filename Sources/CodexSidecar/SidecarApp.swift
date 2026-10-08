@@ -59,7 +59,7 @@ struct SidecarApp: App {
         .windowResizability(.contentMinSize)
         MenuBarExtra {
             MenuBarView(store: store)
-                .preferredColorScheme(store.settings.appearance.colorScheme)
+                .modifier(SidecarPanelAppearance(appearance: store.settings.appearance))
         } label: {
             Label("Codex Sidecar", systemImage: "gauge.with.dots.needle.33percent")
                 .labelStyle(.iconOnly)

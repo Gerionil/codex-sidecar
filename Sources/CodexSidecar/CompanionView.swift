@@ -28,7 +28,10 @@ struct CompanionView: View {
             }
         }
         .modifier(SidecarSurface())
-        .toolbar { SidecarActions(store: store) }
+        .toolbar {
+            ToolbarItem { SidecarRefreshAction(store: store) }
+            ToolbarItem { SidecarSettingsAction() }
+        }
     }
     private var requestList: some View {
         SidecarSection(title: "Recent completed requests") {

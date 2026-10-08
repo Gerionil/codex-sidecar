@@ -17,6 +17,18 @@ struct SidecarSurface: ViewModifier {
     }
 }
 
+/// Menu-bar presentations also need the explicit content environment override.
+struct SidecarPanelAppearance: ViewModifier {
+    let appearance: SidecarAppearance
+    @ViewBuilder func body(content: Content) -> some View {
+        if let scheme = appearance.colorScheme {
+            content.environment(\.colorScheme, scheme).preferredColorScheme(scheme)
+        } else {
+            content.preferredColorScheme(nil)
+        }
+    }
+}
+
 /// Glass belongs to controls; numbers and source details stay on opaque surfaces.
 struct SidecarControl: ViewModifier {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
@@ -45,12 +57,30 @@ struct SidecarActions: View {
     @ObservedObject var store: SidecarStore
     var body: some View {
         HStack(spacing: 8) {
-            Button { Task { await store.refreshQuotas() } } label: {
-                Label("Refresh", systemImage: "arrow.clockwise").labelStyle(.iconOnly)
-            }.keyboardShortcut("r").help("Refresh account limits")
-                .accessibilityLabel("Refresh account limits")
-            SettingsLink { Label("Settings", systemImage: "gearshape").labelStyle(.iconOnly) }
-                .help("Settings").accessibilityLabel("Settings")
-        }.modifier(SidecarControl())
+            SidecarRefreshAction(store: store)
+            SidecarSettingsAction()
+        }
+    }
+}
+
+struct SidecarRefreshAction: View {
+    @ObservedObject var store: SidecarStore
+    var body: some View {
+        Button { Task { await store.refreshQuotas() } } label: {
+            Label("Refresh", systemImage: "arrow.clockwise").labelStyle(.iconOnly)
+        }
+        .modifier(SidecarControl())
+        .keyboardShortcut("r")
+        .help("Refresh account limits")
+        .accessibilityLabel("Refresh account limits")
+    }
+}
+
+struct SidecarSettingsAction: View {
+    var body: some View {
+        SettingsLink { Label("Settings", systemImage: "gearshape").labelStyle(.iconOnly) }
+            .modifier(SidecarControl())
+            .help("Settings")
+            .accessibilityLabel("Settings")
     }
 }
