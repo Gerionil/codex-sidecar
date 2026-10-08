@@ -17,8 +17,8 @@ third-party runtime dependencies.
 
 **Spec:** [SPEC.md](SPEC.md), dated 2026-10-07.
 
-Status: **Stages 1–4 implemented**, with fresh test evidence in
-[docs/validation.md](docs/validation.md). Stages 5–6 have not started and require
+Status: **Stages 1–4 implemented; Stage 5 implementation and deterministic checks complete, native UI acceptance incomplete**, with fresh evidence in
+[docs/validation.md](docs/validation.md). Stage 6 has not started and requires
 explicit owner instructions. A plan checkbox is not proof of a passing test.
 
 The owner approved macOS-first delivery and Swift/SwiftUI on 2026-10-07.
@@ -503,7 +503,7 @@ final class SidecarStore: ObservableObject {
   provider when a scene becomes visible. Closing a window leaves the menu-bar
   app running; explicit Quit performs store shutdown and application termination.
 
-- [ ] **Step 1: Pin meaningful presentation cases before integration.** Feed
+- [x] **Step 1: Pin meaningful presentation cases before integration.** Feed
   synthetic DerivedSession/QuotaState snapshots for partial history, missing
   cache rate, weekly-only quota, stale/error retained values, unknown duration,
   interruption, no root/logs, configured-model-only state and unavailable exact
@@ -515,7 +515,7 @@ final class SidecarStore: ObservableObject {
   Resolve a pending A read after selecting B and assert A cannot overwrite B.
   Use injected providers to assert one start per app lifetime; surface reopen
   never increments starts and explicit shutdown cancels the owned workers.
-- [ ] **Step 2: Implement the panel and small window.** Render SPEC §8. Keep 100
+- [x] **Step 2: Implement the panel and small window.** Render SPEC §8. Keep 100
   recent rows visible with earlier-page loading; request detail shows subsets
   with “included in” labels and tool association confidence. Unattributed calls
   remain task activity. Provide manual selector, fixed selection mode label,
@@ -526,7 +526,7 @@ final class SidecarStore: ObservableObject {
   Use an icon-only menu-bar label, without inventing a single account-wide quota
   percentage. Use native accessibility, keyboard focus and system appearance.
   No custom charts/theme, autostart, prompt titles, or transcripts.
-- [ ] **Step 3: Validate SwiftUI build/packaging gate.** Run `swift test`,
+- [x] **Step 3: Validate SwiftUI build/packaging gate.** Run `swift test`,
   `swift build -c release`, then the local packaging script that copies only the
   release executable and Info.plist into `build/Codex Sidecar.app/Contents/`.
   Resolve the executable location via `swift build -c release --show-bin-path`.
@@ -550,6 +550,12 @@ final class SidecarStore: ObservableObject {
   or modified source file remains. Record packaging/deployment-floor evidence and
   any older macOS/Intel testing gap. Suggested commit:
   `feat: show shared chat usage in menu bar and companion`.
+
+**Stage 5 evidence boundary:** Steps 4–5 remain open for native interactive
+acceptance: the computer-use native pipe was unavailable. Deterministic lifecycle
+and selection checks, release packaging and explicitly synthetic native process
+launch passed. Layout, accessibility, focus/reuse and GUI Quit are not verified.
+See the validation record, including the unintended default-root launch incident.
 
 **Acceptance:** A1, A5–A9, A11, A13; UI remains accurate with unavailable metrics and
 real-time events. macOS 14 support is a declared floor until tested on that OS.

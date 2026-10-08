@@ -1,8 +1,174 @@
 # Validation record
 
+## 2026-10-08 — Stage 5 implementation; native UI acceptance incomplete
+
+**Latest status: Stages 1–4 implemented. Stage 5 code, deterministic tests and
+packaging implemented; native interactive acceptance remains incomplete. Stage 6
+has not started.**
+
+Started `stage/5-native-ui` from clean local `main` at `3c92cd6`, after the owner
+accepted and locally merged Stages 1–4. Fresh baseline: 155 tests passed. Local
+commits only; no push, merge, installation, signing, publication or branch deletion.
+The Stage 3 reducer optimization remains deferred. Source accounting and quota
+allowlists, polling/backoff and process safety boundaries are unchanged.
+
+### Deliverables
+
+- `CodexSidecar` SwiftPM executable, Swift 6 / macOS 14 declared deployment floor,
+  using SwiftUI, Foundation, AppKit lifecycle hooks and existing core providers.
+  No third-party runtime dependencies.
+- One application-level `@MainActor SidecarStore`, placed in SidecarCore so its
+  presentation/lifecycle logic can be tested without SwiftUI. Injected catalog,
+  reader, quota provider, settings persistence and asynchronous runtime factory.
+  Store-owned subscriptions survive surface visibility changes; surface views
+  issue commands and own no providers. Runtime replacement clears old metrics,
+  selection and quotas immediately, serializes teardown and rejects old updates.
+- Normalized `DerivedSession.owningThreadID` rejects buffered updates for a
+  different selected chat, including empty/unavailable snapshots. This is the
+  only change to the existing reducer; accounting/reconciliation is unchanged.
+- `SidecarApp.swift`: one resizable `Window` with stable `companion` ID, 380×680
+  default size, icon-only window-style `MenuBarExtra`, separate Settings scene.
+  `openWindow(id:)` reuses/focuses that scene. Closing a window does not quit;
+  explicit application termination awaits store shutdown. Workspace wake forwards
+  to the same quota provider. No surface starts/stops providers.
+- Shared manual Selected chat and limit-bucket selectors. Both surfaces show
+  dynamic returned windows, source/freshness/error labels, local timezone resets,
+  offline control, unavailable exact context, configured-model provenance,
+  historical last footprint, observed response sum/cache rate and reconciliation.
+  Unknown numbers are unavailable, retained failed quotas are visibly stale,
+  weekly-only data has no 5h placeholder, duplicate slots remain separate.
+  Disappearing saved buckets require explicit reselection with an unavailable label.
+- Companion request pages contain at most 100 rows, with earlier/newer navigation.
+  Disclosure details label cached/cache-write input and reasoning as included
+  subsets; associated tool metadata states stream-order confidence, and task
+  activity/unattributed calls never receive speculative individual token costs.
+  Native controls, system appearance and selectable numeric text are implemented.
+- Settings allow absolute root/executable overrides, shared selection and offline.
+  UserDefaults holds only the allowlisted LocalSettings fields. No metrics,
+  source content or account identifiers are persisted. Same resolved root is used
+  by discovery, reader, executable version probe and quota process.
+- Bounded cancellable `--version` verification for the chosen executable, retaining
+  only its numeric version. Unknown versions remain explicitly unvalidated; the
+  provider independently verifies supported handshake/read schemas. Failed
+  version verification starts no quota transport. Offline starts no quota child.
+- `Resources/Info.plist` and `scripts/package-app.sh`: release executable resolved
+  with `swift build -c release --show-bin-path`, quoted paths, copies only the
+  executable and plist to `build/Codex Sidecar.app/Contents/`. No installation,
+  signing, quarantine changes or upload.
+
+### Test-first and independent review
+
+Initial presentation/integration tests were written before the new interfaces;
+RED compilation confirmed the missing presentation/store APIs. GREEN established
+scope/unknown values, shared selection, quotas independent of chat and pinned
+selection. Subsequent behavioral RED → GREEN regressions reproduced:
+
+- Offline changed during pending runtime creation was lost before provider start.
+- Shutdown did not cancel pending runtime creation/version work.
+- Missing pinned chat could remain Loading indefinitely.
+- Startup could create subscriptions after shutdown during suspended offline
+  setup; a later suspended subscription could finish after its initial stop.
+- A saved bucket removed from a fresh quota snapshot remained an invalid selection
+  and obscured current returned limits.
+
+A fresh-context read-only reviewer examined `3c92cd6..658ad1a`, requirements,
+providers, views, packaging and synthetic harnesses. No confirmed Critical or
+Important production defect was reported; three findings were graded Minor:
+startup after stop, indefinitely Loading missing selection, and removed bucket.
+The missing-selection fix was already underway; the author treated unavailable
+selection and the async lifecycle contract as required Stage 5 behavior and
+reproduced/fixed all findings in one regression pass. An orphan in the real
+catalog was not reproduced; late-start cleanup is also protected for injected
+suspending providers. No second independent review is claimed. No findings remain
+deferred. Reviewer declined native UI, older-platform and live-account judgments;
+those remain unverified gates rather than presumed successes.
+
+Additional actual owned-process tests verify root/argument propagation, sanitized
+version retention, invalid output, cancellation of an unresponsive version child,
+and explicitly unvalidated unknown-version labeling. A real temporary-file reader
+with injected quota transport confirms offline local append, read-only source
+bytes, shutdown and no running reader workers.
+
+### Fresh deterministic/build evidence
+
+Host: Apple Silicon macOS 27.0.1 (26A434), Apple Swift 6.4, active Xcode SDK 27.0.
+The packaged arm64 executable's load commands and Info.plist declare macOS 14.0;
+macOS 14 runtime and Intel are **not tested**. Context7 resolved Apple SwiftUI and
+queried shared app state/Window/MenuBarExtra and Settings/accessibility APIs.
+
+Commands used project-local compiler caches via `CLANG_MODULE_CACHE_PATH` and
+`SWIFTPM_MODULECACHE_OVERRIDE`. SwiftPM `--disable-sandbox` was necessary because
+nested `sandbox-exec` failed with `sandbox_apply: Operation not permitted`.
+User-level SwiftPM cache warnings were environmental. Release dSYM generation
+required a narrowly approved execution outside the sandbox after an initial
+`Operation not permitted` failure. No tool installation or toolchain change.
+
+| Check | Fresh result |
+| --- | --- |
+| `swift test --filter PresentationStateTests` | PASS: 19 tests, 0 failures |
+| `swift test` | PASS: 177 tests, 0 failures (155 retained + 19 presentation/integration + 3 executable tests), 11.142 s |
+| `swift build -c release` | PASS after regression fixes |
+| `scripts/package-app.sh` and `plutil -lint` | PASS: release executable and valid plist in the local bundle |
+| Synthetic 10,000-request replay/stat checks | PASS: replay 0.221 s; append 0.976 s; discovery 5.104 s; pending cancel 0.0022 s; reader stop 0.00043 s. These are reader measurements, not native UI timings. |
+| `git diff --check` | PASS |
+
+### Native launch evidence and exact limitation
+
+The bundle executable exists, is executable and is arm64 Mach-O. Sandboxed
+LaunchServices returned `kLSNoExecutableErr` (-10827) despite that file existing;
+direct sandboxed AppKit execution exited 134. A narrowly approved LaunchServices
+launch outside the sandbox succeeded using explicit test-owned root and executable
+arguments plus `--isolated-settings` (no settings persistence). The selected
+fake executable reported `0.0.0-synthetic`; no historical real CLI version was
+used to certify it. Its stdio method log contained only initialize, initialized,
+account/read and account/rateLimits/read. Synthetic session fingerprints remained
+unchanged. The test processes were then stopped and their absence checked.
+
+**Native computer-use channel failure:** both attempted UI bindings returned
+`Sky Computer Use native pipe closed before response`. No screenshots or native
+accessibility tree were obtained. Therefore default/resized layout, long-label
+rendering, selectable numbers, keyboard navigation/accessibility, panel variants,
+selection from actual surfaces, focus/reuse, panel/window close-reopen behavior,
+native append visibility, offline interaction and explicit GUI Quit are
+**not verified**. Process launch and deterministic store tests do not satisfy
+those interactive acceptance steps. Cleanup used process signals for the known
+owned test processes; it is not evidence for the GUI Quit action.
+
+**Acceptance incident:** the first failed UI binding implicitly launched an extra
+Sidecar instance without synthetic arguments. That instance used default-root
+catalog discovery and started an owned real Codex quota child. This violated the
+requested synthetic-only GUI boundary. No resulting session/account values or
+source contents were inspected, copied or retained in the repository, and no
+inference/chat mutations were requested. That Sidecar instance and its identified
+direct quota child were stopped; their absence was checked. Passive reads and
+Codex-managed housekeeping during that unintended interval were not audited;
+this incident is not a successful live acceptance or a read-only fingerprint
+certification of real Codex state. Subsequent launch used explicit synthetic
+arguments only. After discovering the incident, no further UI binding was
+attempted.
+
+### Stage 5 acceptance coverage
+
+| ID | Evidence and remaining boundary |
+| --- | --- |
+| A1 | Existing synthetic discovery/root/archive/provenance tests retained. Store tests add empty/no-root state, missing pinned chat, settings replacement and same-root executable/provider construction. Native Settings interaction unverified. |
+| A5 | Interruption without completed usage remains unavailable, task activity displays usage-not-reported, completed requests stay distinct from tasks; retained reducer fixtures. |
+| A6 | Details render included subsets and stream-order confidence; unattributed tools remain separate task activity. Existing associator regressions retained; native disclosure/long-tool layout unverified. |
+| A7 | Presentation tests preserve configured-model-only state, historical footprint and unavailable exact current usage/window. No Actual model/current-occupancy claim. Existing context invalidation regressions retained. |
+| A8 | Weekly-only, duplicate durations, unknown/null percentages, independent bucket choice and disappeared selection tested. Existing multiple-bucket/5h-plus-Weekly mapping tests retained. Actual menu-bar panel variants unverified. |
+| A9 | Retained stale/error quota presentation, offline during start and independent local updates tested; existing deterministic quota auth/generation/wake/reset/retry/timeout/process cases retained. Historical Stage 4 live capability check below remains dated separate evidence, not GUI acceptance. |
+| A11 | Real synthetic append/read-only/shutdown and fresh 10,000-request reader measurements pass. Provider/version child cleanup verified deterministically. Native responsiveness, visible latency and GUI Quit unverified. |
+| A13 | One store owns subscribers; repeated start has one provider start/reader subscription; shared command changes A/B metrics while quotas stay fixed; late A rejected; settings/shutdown races covered. Native focus/reopen/shared-surface interactions remain unverified. |
+
+Only Stage 5 status/checklists advanced. Steps 4–5 remain open for native interactive
+acceptance. Stage 6, real installed-session validation and publication are outside
+this task. Exact current context remains unavailable; cross-process notifications,
+account-change coverage, macOS 14 and Intel runtime behavior remain unverified.
+
+
 ## 2026-10-08 — Stage 4 implementation
 
-**Latest status: Stages 1–4 implemented. Stages 5–6 have not started.**
+**Status at the end of Stage 4: Stages 1–4 implemented. Stages 5–6 had not started.**
 
 Started `stage/4-quotas` from clean local `main` at `ef05917`, after the owner
 accepted and merged Stages 1–3. The 118-test baseline passed freshly. All new test
