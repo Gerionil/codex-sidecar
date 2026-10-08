@@ -17,7 +17,7 @@ third-party runtime dependencies.
 
 **Spec:** [SPEC.md](SPEC.md), dated 2026-10-07.
 
-Status: **Stages 1–5 implemented; Stage 6 validation/documentation performed, native UI acceptance incomplete**, with dated evidence and unresolved gates in
+Status: **Stages 1–5 implemented; Stage 6 complete in the owner-approved current-Mac scope**, with dated evidence and explicit exclusions in
 [docs/validation.md](docs/validation.md). Stage 6 has no release/publication
 authorization. A plan checkbox is not proof of full application acceptance.
 
@@ -534,7 +534,7 @@ final class SidecarStore: ObservableObject {
   signing, quarantine removal, or upload. Verify native app launch from the
   bundle. If Command Line Tools/SDK cannot produce a launchable app, report the
   exact gate before claiming GUI completion; do not silently change toolchain.
-- [ ] **Step 4: Inspect the UI with synthetic input.** Start using an explicit
+- [x] **Step 4: Inspect the UI with synthetic input.** Start using an explicit
   test-owned Codex root and fake quota transport. Review 380×680 default window,
   narrow/resized layouts, long tool/model labels, empty states, number selection,
   keyboard selection and accessibility labels. Inspect the compact menu-bar panel
@@ -543,7 +543,7 @@ final class SidecarStore: ObservableObject {
   must focus/reuse the existing window and preserve the selection. Capture only synthetic screenshots
   if needed. Verify appending records updates the selected view within the target;
   toggling offline stops quota work while local updates continue.
-- [ ] **Step 5: Check lifecycle.** Rapidly switch synthetic sessions, wake/refresh,
+- [x] **Step 5: Check lifecycle.** Rapidly switch synthetic sessions, wake/refresh,
   dismiss/reopen the panel, close/reopen the companion, and explicitly quit;
   panel dismissal and window closure preserve selection and scheduled updates,
   while Quit stops workers. No obsolete state, duplicate reader, orphan owned child,
@@ -551,11 +551,15 @@ final class SidecarStore: ObservableObject {
   any older macOS/Intel testing gap. Suggested commit:
   `feat: show shared chat usage in menu bar and companion`.
 
-**Stage 5 evidence boundary:** Steps 4–5 remain open for native interactive
-acceptance: the computer-use native pipe was unavailable. Deterministic lifecycle
-and selection checks, release packaging and explicitly synthetic native process
-launch passed. Layout, accessibility, focus/reuse and GUI Quit are not verified.
-See the validation record, including the unintended default-root launch incident.
+**Stage 5 evidence boundary:** Initially blocked native interaction was followed
+by owner acceptance and authorized current-Mac native checks during Stage 6.
+Selection, keyboard controls, Offline recovery, focus/reuse/close/reopen/Quit,
+appearance and icons are accepted in that scope. Synthetic native renders and
+real-reader append checks cover both views; deterministic tests cover lifecycle
+races and unavailable states. VoiceOver is excluded by the owner; Intel/older
+macOS and simultaneous natural-response updates on both surfaces remain unverified.
+See the latest Stage 6 closure in the validation record; historical attempts are
+retained there rather than treated as current blockers.
 
 **Acceptance:** A1, A5–A9, A11, A13; UI remains accurate with unavailable metrics and
 real-time events. macOS 14 support is a declared floor until tested on that OS.
@@ -602,11 +606,13 @@ publication as gated rather than inventing a license.
   `docs: record installed-profile acceptance and privacy limits`.
   Publication/license/signing/notarization/push remain separate owner actions.
 
-**Execution evidence (2026-10-08):** bounded native attempt, real numeric
-comparison, one fresh passive quota full read, hygiene review, tests/build/package
-and documentation are recorded in docs/validation.md. Native interaction and
-completed-response live append remain unverified; checked steps denote the
-authorized validation work, not closure of those acceptance gaps.
+**Execution evidence (2026-10-08):** Stage 6 is closed in the owner-approved
+current-Mac scope. The final combined 200-test suite, release/package, synthetic
+paired native append, hygiene and independent review pass. Installed-profile
+numeric comparison and passive quota evidence remain recorded in docs/validation.md.
+VoiceOver is excluded, Intel/older macOS and simultaneous natural-response updates
+on both surfaces remain unverified. No model request was created for validation.
+Signing/distribution are subsequent work; no push, merge or publication occurred.
 
 **Acceptance:** A12 and all cross-stage invariants. An unverified exact-context or
 foreground-follow feature is not “completed” by substituting a guess.
@@ -743,3 +749,15 @@ The Dock visual follow-up is closed on the current Mac. Next recommended work:
 investigate the combined-suite version-probe wait, refresh final acceptance
 status, and retain the explicitly unverified both-surface natural-update check.
 VoiceOver and Intel checks are not required in the owner's current scope.
+
+## Stage 6 closure — 2026-10-08
+
+The latest validation entry supersedes historical pending checks above. Fixed the
+combined-suite version-probe hang with a synchronous worker lifetime, added fast
+completion and timeout/reaping regressions, and fixed test PID readiness. All 200
+tests and release/package pass. Both actual native views render a real-reader
+synthetic append from 120/1 to 180/2 in 0.92 seconds without Refresh. Independent
+final branch review found no blocking findings; stale README acceptance wording
+was corrected. Current-Mac acceptance is complete in the owner's agreed scope.
+VoiceOver is excluded; unsupported metrics and unverified platforms remain honest
+limits. Signing, notarization, license and distribution follow separately.

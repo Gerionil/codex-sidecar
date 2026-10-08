@@ -1,5 +1,80 @@
 # Validation record
 
+## 2026-10-08 — Stage 6 closure in the agreed current-Mac scope
+
+**Status: COMPLETE in the owner-approved current-Mac scope.** This entry
+supersedes historical pending acceptance and combined-suite blockers below.
+The owner requested closure, excludes VoiceOver and requires no Intel hardware.
+Signing and distribution are subsequent work; no push, merge, license selection,
+signing, notarization or publication was performed.
+
+### Final evidence
+
+| Check | Fresh result |
+| --- | --- |
+| Combined XCTest suite | 200 tests, zero failures, 15.075 seconds; exit 0 |
+| Release build and local app packaging | Passed; exit 0; 9.14 seconds |
+| Bundle metadata and architecture | Info.plist lint passed; arm64 executable; declared macOS 14 floor |
+| Paired native synthetic append | Actual MenuBarView and CompanionView renders changed from total 120 / 1 completed request to 180 / 2; real SessionReader normal polling, no Refresh; 0.92 seconds |
+| Synthetic source read-only check | After reader shutdown, bytes equal the intentionally appended fixture exactly |
+| Native final launch | Updated package Quit/relaunched through CUA; saved chat restored, Offline remained off; local metrics and passive quotas loaded without Refresh |
+| Repository hygiene | 141 tracked/untracked nonignored files scanned; no real home paths or credential patterns; email-like matches reviewed as synthetic examples and a Retina filename |
+| Independent final branch review | No Critical/Important findings; stale README acceptance wording corrected |
+| Whitespace validation | git diff --check passed |
+
+The paired probe used test-owned copies of the authored native-two-requests
+fixture, an injected catalog and unavailable/offline quotas. Both actual SwiftUI
+views shared one real reader/store. Before/after native renders were inspected:
+tokens, request count, cache rate and companion breakdown all updated. Initial
+hidden-window accessibility traversal returned an empty tree, so no AX assertions
+are claimed for this probe. The rendered comparison plus store assertions passed;
+it is not a live system-status-item interaction check. Scratch files, logs and
+synthetic captures remain ignored rather than copied into the repository.
+
+### Version-probe regression and fix
+
+The previous combined suite hung at Process.waitUntilExit after its child had
+exited. A new twenty-fast-probe regression first failed its ten-second completion
+expectation. The probe previously suspended between Foundation process polling
+operations. Apple documentation says waitUntilExit polls the current run loop;
+thread migration after suspension is the working explanation, not an independently
+instrumented OS root-cause proof.
+
+Moved the complete process lifetime into a private synchronous detached-worker
+helper: launch, nonblocking pipe drain, bounded polling and reaping do not suspend
+between threads. The caller remains asynchronous. Preserved the two-second probe
+deadline, cancellation, numeric-only version result and 4096-byte retention cap.
+The focused four-test run passed, including twenty fast probes. Added an explicit
+unresponsive-process timeout/reaping regression. The first completed 200-test run
+then exposed a test fixture race: an existing PID file could still be empty.
+Cancellation-test readiness now waits for a parseable PID. The final combined
+200-test run passed; both earlier failures are recorded rather than counted as
+successful runs. No new model inference was requested for validation.
+
+### Acceptance boundaries retained at closure
+
+- Current-Mac native acceptance combines owner-confirmed selector, panel,
+  theme and Dock/menu icons with authorized keyboard, Offline recovery,
+  lifecycle and normal-launch checks recorded below.
+- Natural completed-response updates were observed in the companion during
+  ordinary work. **Simultaneous natural-response updates on both surfaces were
+  not observed.** Stage 6 step 2 permits this explicit unverified result when
+  synthetic append coverage is used; the paired native check supplies that
+  evidence without creating a model request solely for testing.
+- **VoiceOver: EXCLUDED BY OWNER**, not passed. Intel and older-macOS runtime
+  acceptance remain unverified; declared minimum OS is not runtime certification.
+- Cross-process notifications and real account-change scenarios remain
+  unverified; deterministic fake-transport tests cover recovery/generations.
+- Exact current context and foreground-chat detection remain unsupported.
+  Partial sources remain visibly partial; no invented totals or response titles.
+- Installed-profile numeric equality, passive quota interpretation and earlier
+  read-only fingerprints remain the bounded live evidence recorded below.
+
+No settings were changed during final closure; the normal Sidecar application
+was left running. Historic limitations below are retained with their dates and
+must not override this scoped current status.
+
+
 ## 2026-10-08 — Owner confirms live Dock icon
 
 The owner confirms that the selected icon is now visible in the live Dock,

@@ -6,16 +6,14 @@ SwiftUI and Foundation; no third-party runtime dependencies or metrics database.
 
 ## Current status
 
-Stages 1–5 are implemented and locally merged. Stage 6 adds installed-profile
-numeric validation, repository hygiene review and operating documentation.
-The owner and subsequent native checks cover the current Mac's UI, keyboard
-navigation, Offline recovery, normal launch/Quit and companion live updates.
-The owner confirms menu-panel functionality, theme switching and the Dock/menu
-icons. VoiceOver is excluded by the owner. Acceptance remains **incomplete**:
-the combined test suite stalls in the existing CLI version-probe wait, although
-all tests pass in separate 195 + 3 runs; simultaneous natural-response updates on
-both surfaces were not specifically observed. See the dated
-[validation record](docs/validation.md) for exact scope and historical findings.
+Stages 1–5 are implemented and locally merged. **Stage 6 is complete in the
+owner-approved current-Mac scope.** The final combined suite passes all 200 tests;
+release packaging and independent branch review pass. Native checks and owner
+acceptance cover keyboard controls, Offline recovery, selection, theme, lifecycle
+and Dock/menu icons. A synthetic append updates both actual native views without
+Refresh. Simultaneous natural-response updates on both surfaces were not observed;
+VoiceOver is excluded by the owner. See the dated
+[validation record](docs/validation.md) for evidence and remaining limits.
 
 The freshly checked CLI profile is **0.160.1** on Apple Silicon macOS 27.0.1.
 The declared deployment floor is macOS 14; macOS 14 and Intel runtime support
@@ -64,8 +62,8 @@ lifecycles; older saved settings default to System without losing overrides.
 The interface uses Codex-inspired light/dark flat surfaces and restrained native
 Liquid Glass controls on macOS 26+. Reduce Transparency and macOS 14–15 use
 bordered controls. Detailed source metadata is disclosed, while missing/partial
-usage and stale/error quota states remain visible. The new appearance requires
-a brief native recheck; prior manual acceptance predates this refinement. Root
+usage and stale/error quota states remain visible. The owner has confirmed native
+appearance switching on the current Mac. Root
 precedence is explicit override, inherited `CODEX_HOME`, then the current user's
 `.codex` directory. A GUI launch may not inherit the shell environment. The same
 resolved root is supplied to session discovery and the owned quota process.
@@ -113,14 +111,15 @@ An unavailable, symlinked or over-16-MiB index falls back to IDs; names above 4 
 and malformed entries are skipped. Index names refresh during catalog discovery. Selector dates use `dd.MM HH:mm`
 in the local time zone, adding a two-digit year for other years. Seconds and time
 zone labels remain available in the selected chat details.
-The owner-reported manual pass predates this selector refinement; repeat selector
-layout and shared-selection checks on the rebuilt app.
+The owner confirmed the refined selector; current-Mac native search and selection
+checks passed.
 Selection stays pinned until changed; recent activity is a suggestion, not
 foreground-chat detection. Changing a chat changes its usage, not current-account
 quotas. **Open window** is implemented to open/focus the companion; closing the
 window keeps the menu-bar app running. **Quit** is implemented to stop owned
 readers and quota workers. These focus/reuse/close/reopen/Quit checks passed in the owner-reported synthetic
-manual checklist; keyboard and VoiceOver acceptance remains outstanding.
+manual checklist. Native keyboard checks passed; VoiceOver is excluded by the
+owner, rather than marked passed.
 
 ## Metrics and data boundaries
 
@@ -173,7 +172,7 @@ unverified; deterministic fake-transport tests cover these state transitions.
 - [Specification](SPEC.md) — approved product and accounting boundaries
 - [Implementation plan](IMPLEMENTATION_PLAN.md) — stage scope and acceptance
 - [Research](docs/research.md) — dated schema/source and installed-profile evidence
-- [Validation](docs/validation.md) — fresh checks and unresolved acceptance
+- [Validation](docs/validation.md) — fresh checks and scoped acceptance
 - [Working instructions](AGENTS.md) — language, privacy and branch workflow
 
 Starter notes and prompts are historical. Current implementation status is above;

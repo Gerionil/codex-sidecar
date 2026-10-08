@@ -2,7 +2,7 @@
 
 Research date: **2026-10-07**, with a bounded installed-profile recheck on
 **2026-10-08**. The first-session investigation is historical; Stages 1–5 are now
-implemented. Native interactive acceptance remains incomplete (see
+implemented. Stage 6 is complete in the owner-approved current-Mac scope (see
 [validation](validation.md)). This document supersedes the original
 research backlog. [SPEC.md](../SPEC.md) contains product decisions, and
 [IMPLEMENTATION_PLAN.md](../IMPLEMENTATION_PLAN.md) defines subsequent work.

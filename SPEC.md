@@ -3,7 +3,8 @@
 Date: **2026-10-07** (approved product specification). The owner approved macOS
 as the first-release platform and Swift/SwiftUI as the stack. Stages 1–5 are now
 implemented; Stage 6 validation is recorded in [docs/validation.md](docs/validation.md).
-Native interactive acceptance remains incomplete. Product requirements below are
+Stage 6 is complete in the owner-approved current-Mac scope; exclusions and
+unverified cases remain explicit in the validation record. Product requirements below are
 unchanged; the original research session preceded implementation.
 
 Evidence: [research findings](docs/research.md). Execution:

@@ -3,6 +3,41 @@ import Darwin
 @testable import SidecarCore
 
 final class ExecutableVersionTests: XCTestCase, @unchecked Sendable {
+    func testUnresponsiveProbeTimesOutAndStopsOwnedProcess() async throws {
+        let f = try ReaderFixture()
+        let executable = try f.write(Data("#!/usr/bin/perl\nopen(F, '>', $ENV{CODEX_HOME}.'/probe.pid'); print F $$; close F; $SIG{TERM}=sub {}; while(1) { select undef,undef,undef,0.01; }\n".utf8), "timed out probe")
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)
+        let completed = expectation(description: "Unresponsive probe returns and is reaped")
+        let task = Task {
+            let began = ProcessInfo.processInfo.systemUptime
+            let version = await ExecutableVersion.verify(executable, root: f.root, environment: [:])
+            XCTAssertNil(version)
+            XCTAssertLessThan(ProcessInfo.processInfo.systemUptime - began, 3.5)
+            let pidFile = f.root.appendingPathComponent("probe.pid")
+            let pid = try XCTUnwrap(Int32(String(contentsOf: pidFile, encoding: .utf8)))
+            XCTAssertEqual(kill(pid, 0), -1)
+            completed.fulfill()
+        }
+        await fulfillment(of: [completed], timeout: 5)
+        task.cancel()
+    }
+
+    func testRepeatedFastProbesAlwaysCompleteWithinBound() async throws {
+        let f = try ReaderFixture()
+        let executable = try f.write(Data("#!/bin/sh\nprintf 'codex-cli 9.8.7-synthetic\\n'\n".utf8), "repeated version probe")
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)
+        let completed = expectation(description: "Repeated exited processes complete")
+        let task = Task {
+            for _ in 0..<20 {
+                let version = await ExecutableVersion.verify(executable, root: f.root, environment: [:])
+                XCTAssertEqual(version, "9.8.7-synthetic")
+            }
+            completed.fulfill()
+        }
+        await fulfillment(of: [completed], timeout: 10)
+        task.cancel()
+    }
+
     func testChosenExecutableUsesChosenRootAndOnlyNumericVersionIsRetained() async throws {
         let f = try ReaderFixture()
         let executable = try f.write(Data("#!/bin/sh\n[ \"$CODEX_HOME\" = \"$EXPECTED_ROOT\" ] || exit 7\n[ \"$1\" = \"--version\" ] || exit 8\nprintf 'codex-cli 9.8.7-synthetic\\n'\n".utf8), "version probe")
@@ -19,9 +54,15 @@ final class ExecutableVersionTests: XCTestCase, @unchecked Sendable {
         try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)
         let root = f.root
         let task = Task { await ExecutableVersion.verify(executable, root: root, environment: [:]) }
+        defer { task.cancel() }
         let pidFile = root.appendingPathComponent("probe.pid")
-        for _ in 0..<200 { if FileManager.default.fileExists(atPath: pidFile.path) { break }; try await Task.sleep(for: .milliseconds(5)) }
-        let pid = try XCTUnwrap(Int32(String(contentsOf: pidFile, encoding: .utf8)))
+        var observedPID: Int32?
+        for _ in 0..<200 {
+            observedPID = (try? String(contentsOf: pidFile, encoding: .utf8)).flatMap(Int32.init)
+            if observedPID != nil { break }
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        let pid = try XCTUnwrap(observedPID)
         let began = ProcessInfo.processInfo.systemUptime
         task.cancel()
         let version = await task.value
