@@ -186,6 +186,38 @@ final class PresentationStateTests: XCTestCase {
         XCTAssertNil(f.store.session); XCTAssertNil(f.store.quota.lastGood)
         await f.store.stop()
     }
+    func testDuplicateAndBlankQuotaBucketNamesRemainDistinguishable() throws {
+        let bytes = Data(#"{"rateLimitsByLimitId":{"a":{"limitName":"Shared"},"b":{"limitName":"Shared"},"c":{"limitName":" "}}}"#.utf8)
+        let snapshot = try QuotaDecoder.decodeRead(bytes, receivedAt: Date())
+        let labels = snapshot.buckets.map { PresentationText.bucketDescriptor($0, peers: snapshot.buckets) }
+        XCTAssertEqual(Set(labels), Set(["Shared (a)", "Shared (b)", "c"]))
+    }
+    func testAppearanceMigrationPreservesOldSettingsAndUnknownAppearanceFallsBack() throws {
+        let old = Data(#"{"rootOverride":"/synthetic","selectedID":"a","offline":true}"#.utf8)
+        let decoded = try JSONDecoder().decode(LocalSettings.self, from: old)
+        XCTAssertEqual(decoded.appearance, .system)
+        XCTAssertTrue(decoded.offline); XCTAssertEqual(decoded.selectedID, "a")
+        let future = Data(#"{"appearance":"future-theme","selectedID":"a","offline":true}"#.utf8)
+        let unknown = try JSONDecoder().decode(LocalSettings.self, from: future)
+        XCTAssertEqual(unknown.appearance, .system); XCTAssertEqual(unknown.selectedID, "a")
+    }
+    func testAppearanceChangePreservesProvidersSelectionAndMetrics() async throws {
+        let f = try Harness()
+        await f.store.start(); await f.catalog.send([f.a])
+        await eventually { !f.store.sessions.isEmpty }
+        await f.store.selectSession(id: f.a.id); await f.reader.send(f.stateA)
+        await f.quota.send(.available(f.quotaSnapshot))
+        await eventually { f.store.session != nil && f.store.quota.lastGood != nil }
+        f.store.setAppearance(.dark)
+        XCTAssertEqual(f.store.settings.appearance, .dark)
+        XCTAssertEqual(f.store.selectedID, f.a.id)
+        XCTAssertEqual(f.store.session?.totals.total, 180)
+        XCTAssertEqual(f.store.quota.lastGood, f.quotaSnapshot)
+        let starts = await f.quota.starts
+        let subscriptions = await f.reader.subscriptions
+        XCTAssertEqual(starts, 1); XCTAssertEqual(subscriptions, 1)
+        await f.store.stop()
+    }
     func testPersistedSettingsContainOnlyAllowedLocalFields() throws {
         let suite = "sidecar.synthetic." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -195,7 +227,7 @@ final class PresentationStateTests: XCTestCase {
         XCTAssertTrue(p.load().offline)
         let data = try XCTUnwrap(defaults.data(forKey: "sidecar.localSettings"))
         let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
-        XCTAssertEqual(Set(object.keys), Set(["rootOverride", "executableOverride", "selectedID", "bucketID", "offline"]))
+        XCTAssertEqual(Set(object.keys), Set(["rootOverride", "executableOverride", "selectedID", "bucketID", "offline", "appearance"]))
     }
     func testRealReaderAppendContinuesOfflineAndStopsOnShutdown() async throws {
         let fixture = try ReaderFixture()

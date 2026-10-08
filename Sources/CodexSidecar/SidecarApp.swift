@@ -51,12 +51,15 @@ struct SidecarApp: App {
     var body: some Scene {
         Window("Codex Sidecar", id: "companion") {
             CompanionView(store: store)
+                .preferredColorScheme(store.settings.appearance.colorScheme)
                 .frame(minWidth: 320, minHeight: 400)
         }
-        .defaultSize(width: 380, height: 680)
+        .defaultSize(width: 420, height: 720)
+        .windowToolbarStyle(.unifiedCompact)
         .windowResizability(.contentMinSize)
         MenuBarExtra {
             MenuBarView(store: store)
+                .preferredColorScheme(store.settings.appearance.colorScheme)
         } label: {
             Label("Codex Sidecar", systemImage: "gauge.with.dots.needle.33percent")
                 .labelStyle(.iconOnly)
@@ -65,6 +68,7 @@ struct SidecarApp: App {
         .menuBarExtraStyle(.window)
         Settings {
             SettingsView(store: store)
+                .preferredColorScheme(store.settings.appearance.colorScheme)
         }
     }
 }

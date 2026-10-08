@@ -55,7 +55,14 @@ sandbox restrictions. Check command failures before treating the app as built.
 
 ## Launch and settings
 
-Local Settings allow a Codex root, executable override and offline mode. Root
+Local Settings allow a Codex root, executable override, offline mode and
+System/Light/Dark appearance. Theme changes preserve selection and provider
+lifecycles; older saved settings default to System without losing overrides.
+The interface uses Codex-inspired light/dark flat surfaces and restrained native
+Liquid Glass controls on macOS 26+. Reduce Transparency and macOS 14–15 use
+bordered controls. Detailed source metadata is disclosed, while missing/partial
+usage and stale/error quota states remain visible. The new appearance requires
+a brief native recheck; prior manual acceptance predates this refinement. Root
 precedence is explicit override, inherited `CODEX_HOME`, then the current user's
 `.codex` directory. A GUI launch may not inherit the shell environment. The same
 resolved root is supplied to session discovery and the owned quota process.
@@ -127,7 +134,7 @@ Files are read locally and incrementally, with bounded framing and periodic
 reconciliation. Sidecar retains normalized metrics in memory, not transcripts,
 raw logs, credentials or account replies. Optional stored chat names are retained
 in memory for display only. Settings persist only local overrides,
-session/bucket selection and offline preference. Restart rebuilds metrics from
+session/bucket selection, appearance and offline preference. Restart rebuilds metrics from
 original sources; source loss and partial history remain explicit. Large-stream reader measurements and limitations
 are recorded in [validation](docs/validation.md).
 

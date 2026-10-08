@@ -11,6 +11,9 @@ struct SettingsView: View {
     }
     var body: some View {
         Form {
+            Picker("Appearance", selection: Binding(get: { store.settings.appearance }, set: { store.setAppearance($0) })) {
+                ForEach(SidecarAppearance.allCases, id: \.self) { Text($0.label).tag($0) }
+            }.accessibilityLabel("Appearance")
             TextField("Codex root override", text: $root).accessibilityLabel("Codex root override")
             TextField("Codex executable override", text: $executable).accessibilityLabel("Codex executable override")
             Text("Use absolute paths. Leave blank for automatic resolution.").font(.caption)
@@ -18,7 +21,7 @@ struct SettingsView: View {
             Text(store.compatibility).font(.caption)
             ChatSelector(store: store)
             Toggle("Offline mode", isOn: Binding(get: { store.settings.offline }, set: { value in Task { await store.setOffline(value) } }))
-            Text("Offline stops quota work; local session updates continue. Only overrides, selection and offline preference are saved.").font(.caption)
+            Text("Offline stops quota work; local session updates continue. Only overrides, selection, appearance and offline preference are saved.").font(.caption)
             if !valid { Text("Enter an absolute path beginning with /.").foregroundStyle(.red) }
             Button(applying ? "Applying…" : "Apply settings") {
                 applying = true
@@ -30,6 +33,7 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .padding()
+        .modifier(SidecarSurface())
         .frame(width: 520)
         .onAppear { root = store.settings.rootOverride ?? ""; executable = store.settings.executableOverride ?? "" }
     }

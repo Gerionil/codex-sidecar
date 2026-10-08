@@ -645,3 +645,28 @@ bounded stored name/update metadata, never prompt-derived names. Preserve pinned
 selection, metrics and account quotas. Add synthetic regressions, rebuild/package,
 review and record fresh results. Brief native selector recheck remains pending;
 keyboard, VoiceOver and real completed-response append gaps are retained.
+
+## Owner-approved Codex-inspired visual refinement — 2026-10-08
+
+The owner approved the light/dark concept with restrained Liquid Glass controls
+and explicitly authorized implementation in this chat. Continue natively on the
+existing stage branch; no merge/push or new accounting work. This bounded UI
+follow-up uses the approved mockup, not a new architectural stage.
+
+- [x] Add System/Light/Dark appearance preference with legacy-settings migration;
+      changing appearance must not recreate readers/providers or clear selection.
+- [x] Build shared flat sections, compact selection, dynamic quota progress,
+      observed metrics and visible availability/coverage states. Keep details
+      disclosed, all native actions accessible and numeric text selectable.
+- [x] Apply native glass button styles only on macOS 26+ and when transparency is
+      enabled; use bordered native controls on macOS 14–15. Keep content opaque.
+- [x] Run settings/state regressions, full suite, release/package, inspect synthetic
+      light/dark renders, request independent review and record acceptance gaps.
+
+Execution evidence: 194 tests passed, release/package passed, synthetic native
+renders inspected and independent review completed. Updated native interaction,
+theme switching and accessibility acceptance remain pending in docs/validation.md.
+
+Ruling: explicit permission to implement the reviewed mockup authorizes this
+bounded follow-up without a second implementation approval; current branch reuse
+follows AGENTS.md. No Codex configuration or real transcript inspection is needed.

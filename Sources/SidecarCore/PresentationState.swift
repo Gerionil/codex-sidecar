@@ -30,6 +30,13 @@ public enum PresentationText {
             ? "dd.MM HH:mm" : "dd.MM.yy HH:mm"
         return formatter.string(from: date)
     }
+    public static func bucketDescriptor(_ bucket: QuotaBucket, peers: [QuotaBucket]) -> String {
+        func name(_ value: QuotaBucket) -> String? {
+            value.name.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.flatMap { $0.isEmpty ? nil : $0 }
+        }
+        guard let title = name(bucket) else { return bucket.id }
+        return peers.contains { $0.id != bucket.id && name($0) == title } ? "\(title) (\(bucket.id))" : title
+    }
     public static func descriptor(_ s: SessionDescriptor, peers: [SessionDescriptor] = []) -> String {
         descriptors(peers.contains(where: { $0.id == s.id }) ? peers : peers + [s])[s.id] ?? "Unavailable"
     }

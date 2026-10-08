@@ -24,17 +24,31 @@ extension SessionCatalog: SidecarCatalog {}
 extension SessionReader: SidecarReader {}
 extension QuotaProvider: SidecarQuotas {}
 
+public enum SidecarAppearance: String, Codable, CaseIterable, Sendable { case system, light, dark }
+
 public struct LocalSettings: Codable, Equatable, Sendable {
     public var rootOverride: String?
     public var executableOverride: String?
     public var selectedID: String?
     public var bucketID: String?
     public var offline: Bool
+    public var appearance: SidecarAppearance
     public init(rootOverride: String? = nil, executableOverride: String? = nil, selectedID: String? = nil,
-                bucketID: String? = nil, offline: Bool = false) {
+                bucketID: String? = nil, offline: Bool = false, appearance: SidecarAppearance = .system) {
         self.rootOverride = rootOverride; self.executableOverride = executableOverride
-        self.selectedID = selectedID; self.bucketID = bucketID; self.offline = offline
+        self.selectedID = selectedID; self.bucketID = bucketID; self.offline = offline; self.appearance = appearance
     }
+    private enum CodingKeys: String, CodingKey { case rootOverride, executableOverride, selectedID, bucketID, offline, appearance }
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        rootOverride = try c.decodeIfPresent(String.self, forKey: .rootOverride)
+        executableOverride = try c.decodeIfPresent(String.self, forKey: .executableOverride)
+        selectedID = try c.decodeIfPresent(String.self, forKey: .selectedID)
+        bucketID = try c.decodeIfPresent(String.self, forKey: .bucketID)
+        offline = try c.decodeIfPresent(Bool.self, forKey: .offline) ?? false
+        appearance = (try? c.decodeIfPresent(SidecarAppearance.self, forKey: .appearance)) ?? .system
+    }
+
 }
 /// Only local settings and opaque selection are persisted. No metrics or account identity.
 @MainActor
@@ -191,6 +205,11 @@ public final class SidecarStore: ObservableObject {
         settings.selectedID = id; persistence?.save(settings)
         session = nil; requestPage = 0
         await runtime.reader.select(descriptor)
+    }
+    public func setAppearance(_ appearance: SidecarAppearance) {
+        guard !stopped else { return }
+        settings.appearance = appearance
+        persistence?.save(settings)
     }
     public func selectBucket(id: String?) {
         settings.bucketID = id; persistence?.save(settings)

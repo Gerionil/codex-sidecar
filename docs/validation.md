@@ -1,5 +1,36 @@
 # Validation record
 
+## 2026-10-08 — Owner-approved Codex-inspired appearance
+
+Implemented the approved flat light/dark interface and System/Light/Dark local
+preference on the existing stage branch. Shared sections show dynamic quota
+windows, observed usage and explicit availability/coverage states; source details
+are disclosed. Glass is confined to native controls on macOS 26+ and falls back
+to bordered controls with Reduce Transparency or older supported systems.
+Appearance changes preserve selected chat, metrics and provider lifecycles.
+Legacy and unknown future appearance values fall back to System without losing
+existing overrides. No new dependencies or accounting behavior were introduced.
+
+| Fresh check | Result |
+| --- | --- |
+| Settings/state regressions and full suite | 194 tests, 0 failures; migration, provider preservation and duplicate/blank quota names covered |
+| Release build and package | Exit 0; valid Info.plist, arm64 executable, deployment floor 14.0 |
+| Independent static review | Duplicate quota labels found and fixed with regression coverage; repeat review found no material issues |
+| Synthetic native rendering on current Mac | Light/dark panel (380 × 620), light/dark window (420 × 720) and narrow window (320 × 720) inspected; dark Open window label contrast corrected |
+| Whitespace check | `git diff --check` passed |
+
+Tests/build/package used project-local compiler caches outside the outer sandbox.
+Render harness used repository-authored synthetic data and injected providers,
+offscreen unordered windows and no real Codex files or quota process. Inactive
+offscreen controls appear muted; these captures do not verify active Liquid Glass
+behavior, interactions, scroll navigation, theme switching or Reduce Transparency
+at runtime. Native recheck of the updated panel, window and settings remains
+pending. Prior owner acceptance predates this appearance refinement; compact
+dates were subsequently confirmed by the owner. Keyboard navigation, VoiceOver
+and naturally completed real-response append remain **NOT VERIFIED**. Validation
+is limited to this Apple Silicon Mac; no Intel/macOS 14 runtime claim is made.
+No user-owned app was stopped/relaunched, and no push or merge was performed.
+
 ## 2026-10-08 — Approved compact selector dates
 
 The owner approved `dd.MM HH:mm` in selector labels, with `.yy` added for a

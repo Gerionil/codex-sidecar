@@ -435,12 +435,23 @@ charts, hidden transcript expansion, live final-answer previews, or speculative
 “expensive prompt” feedback. Local settings allow home/executable override and
 selection without embedding implementation details into the primary view.
 
+Owner-approved visual refinement (2026-10-08): Codex-inspired flat light/dark
+surfaces, System/Light/Dark appearance preference, compact manually pinned chat
+selection and dynamic known-percent quota bars. A companion window starts at
+420 × 720 points; the 380 × 620 menu panel keeps actions fixed above/below its
+scrolling summary. Detailed provenance is disclosed while source loss, partial
+history, unknown context and quota freshness/errors remain visible. Native
+Liquid Glass button styles apply only to controls on macOS 26+ when Reduce
+Transparency is disabled; macOS 14–15 use bordered controls. No glass data cards
+or dependency/ownership/accounting changes. Appearance changes do not restart
+providers. All numbers remain selectable and standard controls remain accessible.
+
 Raw bytes exist only transiently for parsing; normalized state retains numeric
 metrics, opaque identities, local source cursor, project basename, optional stored
 chat title, public tool
 name/call ID, and lifecycle times. Never persist prompts/messages/reasoning,
 arguments/output, raw JSON, credentials, source contents, or account IDs. Do not
-retain full unknown events. UserDefaults may hold local overrides and selection;
+retain full unknown events. UserDefaults may hold local overrides, appearance and selection;
 no derived transcript/metrics cache. Diagnostics contain category, line/offset,
 and count only, excluding raw payloads, stderr text, and full private paths.
 
