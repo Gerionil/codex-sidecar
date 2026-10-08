@@ -1,5 +1,27 @@
 # Validation record
 
+## 2026-10-08 — First public preview published
+
+**Status: PUBLISHED.** Repository `Gerionil/codex-sidecar` is public and
+GitHub Release `v0.1.0` is a published prerelease, not a draft. Source tag
+`v0.1.0` points to `05bbcf8`; main was fast-forwarded to the tested stage tree
+before publication. The stage branch is retained locally and remotely.
+
+| Check | Fresh result |
+| --- | --- |
+| GitHub-downloaded ZIP | SHA-256 and CRC passed; byte-for-byte identical to the uploaded archive; MIT attribution included; no matched home paths in the executable |
+| Downloaded app native smoke | Launched the extracted GitHub copy with isolated settings and a synthetic offline root; selected Release smoke demo; total 180, two completed requests, 66.67% cache hit; test instance quit |
+| Published assets | Codex-Sidecar-0.1.0-macos-arm64.zip (798,846 bytes) and SHA256SUMS.txt uploaded |
+| Public access | Unauthenticated GitHub API returned the published release and both assets; repository visibility is PUBLIC |
+
+Archive SHA-256:
+`ec3218c0d398780fe1f21dc9f3853dca6f6ed76e84ce5a888fc51107d49fbb1b`.
+
+No special model request was created. Original application settings were not
+changed. Apple Developer ID signing and notarization remain deferred by the
+owner. The CLI-download smoke does not verify browser quarantine/Gatekeeper;
+Intel, older macOS and VoiceOver remain outside the agreed acceptance scope.
+
 ## 2026-10-08 — First public preview preparation
 
 The owner authorized history/file review, public README/screenshots, a ZIP
