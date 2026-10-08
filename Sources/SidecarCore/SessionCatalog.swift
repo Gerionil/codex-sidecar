@@ -6,15 +6,17 @@ public struct SessionDescriptor: Equatable, Sendable {
     public let id: String
     public let sourceURLs: [URL]
     public let projectName: String?
+    /// Optional stored name from the selected root's metadata index; never synthesized from a prompt.
+    public let title: String?
     public let cliVersion: String?
     public let lastActivity: Date?
     public let parentThreadID: String?
     public let provenanceAmbiguous: Bool
     public init(id: String, sourceURLs: [URL], projectName: String?, cliVersion: String?,
-                lastActivity: Date?, parentThreadID: String?, provenanceAmbiguous: Bool = false) {
+                lastActivity: Date?, parentThreadID: String?, provenanceAmbiguous: Bool = false, title: String? = nil) {
         self.id = id; self.sourceURLs = sourceURLs; self.projectName = projectName
         self.cliVersion = cliVersion; self.lastActivity = lastActivity; self.parentThreadID = parentThreadID
-        self.provenanceAmbiguous = provenanceAmbiguous
+        self.provenanceAmbiguous = provenanceAmbiguous; self.title = title
     }
 }
 
@@ -186,6 +188,7 @@ public actor SessionCatalog {
                 } catch { status = .partial }
             }
         }
+        let names = SessionNameIndex.read(root: root, sessionIDs: Set(groups.keys))
         let sessions = groups.map { id, copies in
             let first = copies[0]
             let parents = Set(copies.compactMap(\.parentThreadID))
@@ -194,12 +197,16 @@ public actor SessionCatalog {
             return SessionDescriptor(id: id, sourceURLs: copies.flatMap(\.sourceURLs).sorted { $0.path < $1.path },
                 projectName: copies.allSatisfy { $0.projectName == first.projectName } ? first.projectName : nil,
                 cliVersion: copies.allSatisfy { $0.cliVersion == first.cliVersion } ? first.cliVersion : nil,
-                lastActivity: copies.compactMap(\.lastActivity).max(),
-                parentThreadID: ambiguous ? nil : parents.first, provenanceAmbiguous: ambiguous)
+                lastActivity: (copies.compactMap(\.lastActivity) + [names[id]?.updatedAt].compactMap { $0 }).max(),
+                parentThreadID: ambiguous ? nil : parents.first, provenanceAmbiguous: ambiguous, title: names[id]?.title)
         }.sorted { lhs, rhs in
             let leftRoot = lhs.parentThreadID == nil && !lhs.provenanceAmbiguous
             let rightRoot = rhs.parentThreadID == nil && !rhs.provenanceAmbiguous
-            return leftRoot != rightRoot ? leftRoot : lhs.id < rhs.id
+            if leftRoot != rightRoot { return leftRoot }
+            if lhs.lastActivity != rhs.lastActivity {
+                return (lhs.lastActivity ?? .distantPast) > (rhs.lastActivity ?? .distantPast)
+            }
+            return lhs.id < rhs.id
         }
         return (sessions, status)
     }

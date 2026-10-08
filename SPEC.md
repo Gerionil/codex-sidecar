@@ -63,6 +63,7 @@ experimental; validate capabilities rather than silently accepting every version
 | Source | Used for | Required limitations |
 | --- | --- | --- |
 | `sessions/**/*.jsonl`, optional `archived_sessions/**/*.jsonl` | Session identity, owned response ledger, task lifecycle, tool metadata, configured model and window snapshots | Read-only; bounded selective decode; do not retain transcript payloads |
+| Optional `session_index.jsonl` | Stored chat title and recency, joined only to discovered session IDs | Read-only, bounded and memory-only; unavailable or invalid entries use identity fallback; no transcript title inference |
 | `token_usage_record` | One completed response and task/thread cumulative reconciliation | Best-effort completed usage, not all attempted inference |
 | `event_msg/token_count` | Snapshot diagnostics/window; conservative legacy aggregate | Never another native request; display totals can be overridden |
 | `codex app-server` via stdio | Account status and quotas | Own process only; does not follow desktop threads automatically |
@@ -344,8 +345,17 @@ activity while preserving local session parsing.
 List regular JSONL files inside the selected roots; skip symlinks and external
 paths. Read bounded headers/tails for session candidates; do not parse every
 session's body at launch. Root sessions come before child agents; list child
-provenance without auto-aggregating. Use project directory basename and short
-synthetic-friendly session identity, never a prompt-derived title.
+provenance without auto-aggregating. Within each root/child group, order by newest
+known activity (maximum source modification time and valid indexed `updated_at`),
+then stable session identity for ties. This is a recency heuristic, not foreground
+chat detection. Use project basename and an optional stored `thread_name` joined
+by session ID from the selected root's `session_index.jsonl`; never derive a title
+from transcript or prompt text. Missing/invalid metadata falls back to a short,
+distinguishable identity. Duplicate names within a project add an identity suffix.
+The optional index uses bounded reads (16 MiB total, 4 KiB title), skips malformed
+complete entries and ignores an incomplete tail. Over-limit/unavailable/symlink
+indexes fall back without hiding discovered chats. Most recent valid timestamp
+wins repeated entries; equal timestamps use the last complete valid entry.
 
 After manual selection, keep that session pinned until changed. An optional
 “Recent activity” suggestion may use timestamp/task evidence; it must not switch
@@ -390,8 +400,8 @@ Two native surfaces share one application-level store:
 
 Selection in either surface updates both. Selecting a chat changes session
 metrics and requests, not current-account quota values. The UI lists local chat
-descriptors from project basename, start/last activity and root/child identity;
-do not read prompt text to reproduce the synthetic chat titles in the mockup.
+descriptors from project basename, optional stored chat title, last activity and
+root/child identity; do not read prompt text to reproduce chat titles.
 Manual selection remains pinned when another desktop chat becomes active.
 
 Companion content:
@@ -424,7 +434,8 @@ charts, hidden transcript expansion, live final-answer previews, or speculative
 selection without embedding implementation details into the primary view.
 
 Raw bytes exist only transiently for parsing; normalized state retains numeric
-metrics, opaque identities, local source cursor, project basename, public tool
+metrics, opaque identities, local source cursor, project basename, optional stored
+chat title, public tool
 name/call ID, and lifecycle times. Never persist prompts/messages/reasoning,
 arguments/output, raw JSON, credentials, source contents, or account IDs. Do not
 retain full unknown events. UserDefaults may hold local overrides and selection;

@@ -12,9 +12,53 @@ public enum PresentationText {
         formatter.dateStyle = .medium; formatter.timeStyle = .medium
         return formatter.string(from: date) + " " + (TimeZone.current.abbreviation(for: date) ?? TimeZone.current.identifier)
     }
-    public static func descriptor(_ s: SessionDescriptor) -> String {
-        let provenance = s.provenanceAmbiguous ? "Ambiguous provenance" : (s.parentThreadID == nil ? "Root" : "Child")
-        return "\(s.projectName ?? "Unknown project") · \(s.id.prefix(8)) · \(provenance) · \(time(s.lastActivity))"
+    public static func descriptor(_ s: SessionDescriptor, peers: [SessionDescriptor] = []) -> String {
+        descriptors(peers.contains(where: { $0.id == s.id }) ? peers : peers + [s])[s.id] ?? "Unavailable"
+    }
+    /// Prepare a whole catalog once, avoiding a full peer scan for every native menu row.
+    public static func descriptors(_ sessions: [SessionDescriptor]) -> [String: String] {
+        struct NameKey: Hashable { let project: String?; let title: String }
+        var nameCounts: [NameKey: Int] = [:]
+        for s in sessions {
+            if let title = s.title { nameCounts[NameKey(project: s.projectName, title: title), default: 0] += 1 }
+        }
+        let needsIdentity = sessions.filter { s in
+            guard let title = s.title else { return true }
+            return nameCounts[NameKey(project: s.projectName, title: title), default: 0] > 1
+        }
+        let groups = Dictionary(grouping: needsIdentity, by: { String($0.id.prefix(8)) })
+        var identities: [String: String] = [:]
+        for (prefix, group) in groups {
+            if group.count == 1 { identities[group[0].id] = prefix; continue }
+            // Count suffixes once per width, including catalogs sharing a migrated UUID prefix.
+            var pending = group
+            for width in 4...max(4, group.map { $0.id.count }.max() ?? 4) {
+                var counts: [String: Int] = [:]
+                for s in group { counts[String(s.id.suffix(width)), default: 0] += 1 }
+                pending = pending.filter { s in
+                    let suffix = String(s.id.suffix(width))
+                    guard counts[suffix] == 1 || width >= s.id.count else { return true }
+                    identities[s.id] = width + 8 < s.id.count ? "\(prefix)…\(suffix)" : s.id
+                    return false
+                }
+                if pending.isEmpty { break }
+            }
+        }
+        var labels: [String: String] = [:]
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium; formatter.timeStyle = .medium
+        for s in sessions {
+            let identity = identities[s.id] ?? s.id
+            let name = s.title.map { title in
+                nameCounts[NameKey(project: s.projectName, title: title), default: 0] > 1 ? "\(title) (\(identity))" : title
+            } ?? identity
+            let provenance = s.provenanceAmbiguous ? "Ambiguous provenance" : (s.parentThreadID == nil ? "Root" : "Child")
+            let activity = s.lastActivity.map {
+                formatter.string(from: $0) + " " + (TimeZone.current.abbreviation(for: $0) ?? TimeZone.current.identifier)
+            } ?? "Unavailable"
+            labels[s.id] = "\(s.projectName ?? "Unknown project") · \(name) · \(provenance) · \(activity)"
+        }
+        return labels
     }
     public static func failure(_ f: QuotaFailure) -> String {
         switch f {

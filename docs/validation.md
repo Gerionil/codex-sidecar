@@ -1,5 +1,46 @@
 # Validation record
 
+## 2026-10-08 — Owner-approved selector refinement
+
+Implemented on the existing `stage/6-validation` branch after the owner approved
+the bounded design. Both native selectors now show optional stored chat titles
+from the selected root's `session_index.jsonl`, with distinguishable ID fallback
+and duplicate-title disambiguation. Root chats precede children; each group sorts
+by newest known activity (maximum source modification/index update time), then
+stable ID ties. Recency is a heuristic, not foreground detection. Selection stays
+pinned by ID; catalog rename/reorder does not restart providers or change metrics
+or account quotas.
+
+The metadata reader is read-only, memory-only and bounded to 64 KiB chunks,
+16 MiB total input and 4 KiB names, using regular-file/no-symlink source access.
+It retains only names/update times joined to discovered IDs, discards unknown
+fields and malformed complete entries, and ignores incomplete tails. Missing,
+unreadable, symlinked or oversized indexes safely fall back. No transcript name
+inference, chat RPC, real-data export or new quota/live-inference probe was used.
+A focused failure exposed Foundation normalization of physical temporary-root
+paths; resolving only the approved root fixed this while preserving rejection of
+symlinked index files.
+
+| Fresh check | Result |
+| --- | --- |
+| Focused RED → GREEN | Recency/name tests initially failed (6 tests, 7 assertions); descriptor behavior failed (3 tests, 5 assertions), then focused 9 tests passed |
+| Full `swift test --disable-sandbox` | 190 tests, 0 failures; includes oversized/malformed metadata, rename/ties, ID collisions, read-only/symlink boundaries and shared-store selection/metric/quota preservation |
+| Synthetic 10,000-chat duplicate-name/shared-prefix label preparation | 0.0243 s; 10,000 distinct labels; prepared off the UI actor once per catalog update |
+| Synthetic 10,000-request reader run in full suite | Replay 0.229 s; stat-only append 0.945 s; stat-only discovery 5.097 s; stop 0.00045 s |
+| `swift build -c release --disable-sandbox` | Exit 0 |
+| `scripts/package-app.sh --disable-sandbox` | Exit 0; rebuilt local app bundle |
+| Package inspection | Info.plist valid; Mach-O arm64; macOS deployment floor 14.0 |
+| Independent code review | Initial P2 quadratic menu-label preparation fixed; repeat review found no material issues |
+| Whitespace/privacy review | `git diff --check` passed; no debug output or real title/log/credential captures introduced |
+
+Tests/build/package ran outside the outer validation sandbox with project-local
+compiler caches. This verifies only the current Apple Silicon Mac. No Intel or
+macOS 14 runtime check is claimed. The rebuilt selector still needs a brief native
+recheck of names/order/layout and shared pinned selection. Earlier owner-reported
+manual acceptance predates this change; keyboard navigation, VoiceOver and real
+completed-response live append remain **NOT VERIFIED**. No user-owned app was
+stopped or relaunched during this refinement. No push or merge was performed.
+
 ## 2026-10-08 — Owner-reported manual acceptance on the current Mac
 
 The owner reported completing the supplied manual checklist except keyboard

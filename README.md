@@ -84,7 +84,16 @@ provide a test-owned root and fake executable explicitly and verify the running
 instance's arguments before binding any UI tool that could auto-launch an app.
 
 Choose a chat manually from **Selected chat** in either surface. Descriptors use
-local project/session metadata, without manufacturing titles from prompts.
+`Project · Chat title · Root/Child · Last activity` when a stored title is available
+in the selected root's optional `session_index.jsonl`. Titles are never inferred
+from prompts. Missing titles use distinguishable short IDs; duplicate titles in
+the same project include an ID suffix. Roots come first, then children; each group
+sorts by newest known activity, with stable ID ties. Activity uses the newer of
+source modification time and valid indexed update time, so it is a heuristic.
+An unavailable, symlinked or over-16-MiB index falls back to IDs; names above 4 KiB
+and malformed entries are skipped. Index names refresh during catalog discovery.
+The owner-reported manual pass predates this selector refinement; repeat selector
+layout and shared-selection checks on the rebuilt app.
 Selection stays pinned until changed; recent activity is a suggestion, not
 foreground-chat detection. Changing a chat changes its usage, not current-account
 quotas. **Open window** is implemented to open/focus the companion; closing the
@@ -114,7 +123,8 @@ manual checklist; keyboard and VoiceOver acceptance remains outstanding.
 
 Files are read locally and incrementally, with bounded framing and periodic
 reconciliation. Sidecar retains normalized metrics in memory, not transcripts,
-raw logs, credentials or account replies. Settings persist only local overrides,
+raw logs, credentials or account replies. Optional stored chat names are retained
+in memory for display only. Settings persist only local overrides,
 session/bucket selection and offline preference. Restart rebuilds metrics from
 original sources; source loss and partial history remain explicit. Large-stream reader measurements and limitations
 are recorded in [validation](docs/validation.md).

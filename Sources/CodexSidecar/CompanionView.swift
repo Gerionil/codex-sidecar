@@ -66,12 +66,12 @@ struct ChatSelector: View {
                 if let id = store.selectedID, !store.sessions.contains(where: { $0.id == id }) {
                     Text("Pinned chat · Sources unavailable").tag(id)
                 }
-                ForEach(store.sessions, id: \.id) { Text(PresentationText.descriptor($0)).tag($0.id) }
+                ForEach(store.sessions, id: \.id) { Text(store.sessionLabels[$0.id] ?? "Unavailable").tag($0.id) }
             }
             .accessibilityLabel("Selected chat")
             Text("Manual selection · Pinned until changed").font(.caption).foregroundStyle(.secondary)
             if let descriptor = store.selectedDescriptor {
-                Text(PresentationText.descriptor(descriptor)).font(.caption).textSelection(.enabled)
+                Text(store.sessionLabels[descriptor.id] ?? "Unavailable").font(.caption).textSelection(.enabled)
                 Text("Log profile: \(descriptor.cliVersion ?? "Unknown") · Internal version-sensitive format").font(.caption).foregroundStyle(.secondary)
             }
             Text(store.sessionStatus).font(.caption)

@@ -635,3 +635,13 @@ limits. Do not broaden scope to bypass a gate.
 Before implementation, the owner reviews SPEC.md and this plan. Execution method
 (native or explicitly delegated) can be chosen in the implementation session.
 This first session has produced documents only and stops here.
+
+## Stage 6 owner-approved selector follow-up — 2026-10-08
+
+After owner-reported native acceptance, refine both shared selectors: root-first,
+recent activity descending with stable ties; optional indexed chat names after
+project, distinguishable ID fallback and duplicate-name disambiguation. Read only
+bounded stored name/update metadata, never prompt-derived names. Preserve pinned
+selection, metrics and account quotas. Add synthetic regressions, rebuild/package,
+review and record fresh results. Brief native selector recheck remains pending;
+keyboard, VoiceOver and real completed-response append gaps are retained.

@@ -74,6 +74,29 @@ final class PresentationStateTests: XCTestCase {
         XCTAssertEqual(f.store.quota.lastGood, f.quotaSnapshot)
         await f.store.stop()
     }
+    func testCatalogRenameAndReorderPreserveSelectionMetricsAndQuotas() async throws {
+        let f = try Harness()
+        await f.store.start(); await f.catalog.send([f.a, f.b])
+        await eventually { f.store.sessions.count == 2 }
+        await f.store.selectSession(id: f.a.id)
+        await f.reader.send(f.stateA)
+        await f.quota.send(.available(f.quotaSnapshot))
+        await eventually { f.store.session?.totals.total == 180 && f.store.quota.lastGood != nil }
+        let renamed = SessionDescriptor(id: f.a.id, sourceURLs: f.a.sourceURLs,
+            projectName: f.a.projectName, cliVersion: f.a.cliVersion,
+            lastActivity: f.a.lastActivity, parentThreadID: nil, title: "Renamed synthetic chat")
+        await f.catalog.send([f.b, renamed])
+        await eventually { f.store.selectedDescriptor?.title == "Renamed synthetic chat" }
+        XCTAssertEqual(f.store.sessions.first?.id, f.b.id)
+        XCTAssertTrue(f.store.sessionLabels[f.a.id]?.contains("Renamed synthetic chat") == true)
+        XCTAssertEqual(f.store.selectedID, f.a.id)
+        XCTAssertEqual(f.store.session?.totals.total, 180)
+        XCTAssertEqual(f.store.quota.lastGood, f.quotaSnapshot)
+        let starts = await f.quota.starts
+        let subscriptions = await f.reader.subscriptions
+        XCTAssertEqual(starts, 1); XCTAssertEqual(subscriptions, 1)
+        await f.store.stop()
+    }
     func testPinnedSelectionSurvivesNewChildrenAndSurfaceReopens() async throws {
         let f = try Harness()
         await f.store.start(); await f.catalog.send([f.a, f.b])

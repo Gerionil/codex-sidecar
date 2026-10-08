@@ -615,3 +615,16 @@ acceptance through a tester or accessible runtime environment. A SwiftUI MVP
 would need a new Windows UI and adaptation of platform code; separating UI and
 accounting responsibilities does not guarantee an automatic port. The authoritative
 current requirements are in [SPEC.md](../SPEC.md) and [IMPLEMENTATION_PLAN.md](../IMPLEMENTATION_PLAN.md).
+
+### Optional stored chat metadata — 2026-10-08
+
+A bounded schema-only inspection of the local `session_index.jsonl` observed
+`id`, `thread_name` and `updated_at` keys. No real values, names, identifiers or
+source paths were exported. This internal, optional format is version-sensitive;
+it does not guarantee a name for every discovered chat or exact desktop recency.
+The owner approved using only those fields to improve selector labels and ordering,
+with identity fallback. Unknown fields are discarded, names stay in memory and
+no transcript fallback, database access or chat RPC is introduced. Foundation
+ISO8601 parsing for ordinary and fractional timestamps was checked through current
+Apple Foundation documentation via Context7. Synthetic regression evidence is in
+[validation](validation.md).
