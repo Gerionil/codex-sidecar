@@ -26,6 +26,13 @@ enum Fixture {
         }
     }
 
+    static func data(_ name: String, ext: String) throws -> Data {
+        guard let url = Bundle.module.url(forResource: name, withExtension: ext) else {
+            throw CocoaError(.fileNoSuchFile)
+        }
+        return try Data(contentsOf: url)
+    }
+
     static func lines(_ name: String) throws -> [Data] {
         guard let url = Bundle.module.url(forResource: name, withExtension: "jsonl") else {
             throw CocoaError(.fileNoSuchFile)
