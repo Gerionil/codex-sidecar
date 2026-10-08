@@ -17,8 +17,8 @@ third-party runtime dependencies.
 
 **Spec:** [SPEC.md](SPEC.md), dated 2026-10-07.
 
-Status: **Stages 1, 2 and 3 implemented**, with fresh test evidence in
-[docs/validation.md](docs/validation.md). Stages 4–6 have not started and require
+Status: **Stages 1–4 implemented**, with fresh test evidence in
+[docs/validation.md](docs/validation.md). Stages 5–6 have not started and require
 explicit owner instructions. A plan checkbox is not proof of a passing test.
 
 The owner approved macOS-first delivery and Swift/SwiftUI on 2026-10-07.
@@ -408,7 +408,7 @@ actor QuotaProvider {
   retains last receipt time and sanitized reason. Inject transport and a
   controllable scheduler into provider construction for tests; no live sleeps.
 
-- [ ] **Step 1: Write failing mapping tests.** Weekly-only synthetic fixture has
+- [x] **Step 1: Write failing mapping tests.** Weekly-only synthetic fixture has
   used 25, duration 10080, reset 1800000000; it must show 75% remaining and no 5h.
 
 ```swift
@@ -436,7 +436,7 @@ func testWeeklyPrimaryDoesNotBecomeFiveHours() throws {
   is extended, and one eligible coalesced full read follows. Only a subsequent
   full read can authoritatively remove a window/bucket. Nullable ordinary permission
   must not be inferred from percent.
-- [ ] **Step 2: Write failing provider tests using fake transport/scheduler.**
+- [x] **Step 2: Write failing provider tests using fake transport/scheduler.**
   Test single-flight overlap, interleaved notification/response IDs, missing
   executable, init failure, auth missing/API key, timeout at 20 seconds, process
   death, malformed JSON, 120-second freshness expiry, transient retained-good
@@ -444,14 +444,14 @@ func testWeeklyPrimaryDoesNotBecomeFiveHours() throws {
   Start a fake pending read, change account generation, complete old read and
   assert old values never publish. Clear values on auth loss. Offline must stop
   the child and issue zero transport/network requests; a later enable refreshes.
-- [ ] **Step 3: Write transport allowlist/privacy tests.** Assert exactly the
+- [x] **Step 3: Write transport allowlist/privacy tests.** Assert exactly the
   permitted initialize/initialized/account-read/rate-limits operations and no
   turn, thread resume, auth-token export, logout/reset, or approval actions.
   Unknown server requests get a sanitized unsupported response. Fake stderr
   containing `PRIVATE_MARKER` must never reach diagnostics. Fill stdout/stderr
   pipes concurrently and confirm they drain; cancel/exit closes only the owned
   process. Request protocol does not go through a shell or a public socket.
-- [ ] **Step 4: Run quota test classes, observe failures, implement minimal RPC
+- [x] **Step 4: Run quota test classes, observe failures, implement minimal RPC
   and state reducer, then re-run `swift test`.** Use matching installed initialize
   capabilities, use `excludeResetCreditDetails: true` for background reads and
   omit `supportsLunaReserve`, disable analytics by child-only override, explicitly select root
@@ -459,7 +459,7 @@ func testWeeklyPrimaryDoesNotBecomeFiveHours() throws {
   account generation before publishing old replies. With identity unavailable,
   do not claim confirmed historical-session/account matching or carry values
   across a known account change. Distinct RPC errors map to sanitized categories.
-- [ ] **Step 5: Perform one bounded live capability check.** `codex --version`,
+- [x] **Step 5: Perform one bounded live capability check.** `codex --version`,
   generate schema to temporary storage, then initialize the provider and read
   account/quotas without model requests or chat mutations. Record version,
   bucket/window presence, and success/unavailable outcome only. Missing 5h is

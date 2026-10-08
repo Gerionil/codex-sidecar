@@ -1,8 +1,157 @@
 # Validation record
 
+## 2026-10-08 — Stage 4 implementation
+
+**Latest status: Stages 1–4 implemented. Stages 5–6 have not started.**
+
+Started `stage/4-quotas` from clean local `main` at `ef05917`, after the owner
+accepted and merged Stages 1–3. The 118-test baseline passed freshly. All new test
+inputs are synthetic; filesystem/process tests use test-owned temporary resources.
+Existing accounting, session reading and unavailable exact current context remain
+unchanged. The deferred Stage 3 reducer optimization is outside this change.
+
+### Deliverables and interfaces
+
+- `QuotaModels.swift`: immutable dynamic buckets and source-slot windows, optional
+  names/model-alias and permission metadata, source used percentages, clamped
+  remaining percentages, sanitized warnings, receipt time and account generation.
+  `QuotaDecoder.decodeRead(_:receivedAt:)` prefers even an empty returned map;
+  only absent/null maps permit legacy fallback. Duplicate durations keep both
+  slots. Duration labels use 300/10080 minutes; other/unknown durations stay literal
+  or unknown. Signed integer durations retain Int64 precision. Malformed/null
+  fields never become zero; unrepresentable JSON numbers fail closed. Reset dates
+  outside Foundation's useful civil range remain unknown with a warning.
+- `QuotaRPC.swift`: Sendable `QuotaTransport`, injectable `QuotaScheduler`, actor
+  request correlation and 20-second deadlines. Only initialize/initialized,
+  account/read with refreshToken=false and account/rateLimits/read with
+  excludeResetCreditDetails=true are accepted. supportsLunaReserve is omitted.
+  Unexpected server requests receive a fixed unsupported-method response; IDs
+  larger than 256 UTF-8 bytes fail closed instead of being reflected. No approval,
+  browser, login, inference, thread or reset action exists.
+- `QuotaExecutable.resolve` checks explicit selection, absolute PATH entries and
+  recognized installed bundle candidates. Explicit invalid selection fails rather
+  than silently selecting another executable. Version verification was performed
+  in the bounded capability check below; resolution alone is not a compatibility
+  certification. Process construction receives the same resolved root chosen for
+  session discovery, setting child CODEX_HOME and analytics.enabled=false through
+  an argument array. It does not inspect or edit configuration/credentials.
+- Foundation Process owns one stdio child. Independent nonblocking stdout/stderr
+  dispatch sources drain in bounded chunks; stderr is discarded. Stdout buffering
+  is bounded to 64 chunks and each JSON message to 1 MiB. Input writes are
+  nonblocking, at most 1 KiB each with at most 32 queued writes; macOS per-descriptor
+  SIGPIPE suppression prevents a closed child pipe from terminating Sidecar.
+  Cleanup closes owned pipes, cancels sources and terminates only the owned child,
+  escalating to SIGKILL after a bounded one-second grace if still running.
+- `QuotaProvider.swift`: actor start/refresh/wake/offline/accountChanged/stop and
+  latest-only `AsyncStream<QuotaState>` subscriptions. Loading, available,
+  unavailable, stale and error states retain honest optional values. Transient
+  failure keeps last good values; authentication loss and known account changes
+  clear values. Account identifiers are transient comparison data only, never
+  snapshot/diagnostic/persistence fields.
+- Start/manual/wake reads are single-flight. Automatic reads occur at 60 seconds;
+  staleness is 120 seconds, with immediate wake/reset stale labels. Retries use
+  60/120/300 seconds capped at 300; manual refresh bypasses backoff. Past resets
+  cause one refresh hint and retain usage, never an invented recovery or tight
+  loop. Sparse quota notifications change neither buckets, nullable metadata nor
+  freshness/deadlines; the next eligible full read coalesces them. Polling continues.
+  Account notifications invalidate account generations and coalesce a fresh read
+  on the same owned process, avoiding initialization-notification restart loops.
+  A sticky account hint cannot be displaced by ordinary quota hints.
+- Account/process generations and transition tokens discard obsolete results and
+  prevent an old awaited stop from overwriting a later enable. Offline never
+  constructs a transport, clears old quotas and stops the child; local parsing
+  continues independently. Last-subscriber cancellation stops owned provider
+  resources; explicit stop finishes streams, including subscriptions after stop.
+
+### Test-first and independent review evidence
+
+The planned mapping/provider/transport test classes were authored before their
+production components. Initial RED builds reported the missing new interfaces.
+Behavioral RED runs then reproduced internal account-generation changes wedging
+single-flight cleanup and a notification restart inheriting its cancelled listener.
+Both were corrected and passed before the initial 145-test full-suite GREEN run.
+
+An independent fresh-context reviewer examined `ef05917..5cb38f3` and reproduced
+four important findings using temporary synthetic harnesses. The author reproduced
+regression failures and fixed all four in one fix pass:
+
+| Finding | RED → GREEN regression / additional integration coverage |
+| --- | --- |
+| Initialization account notification restarted the process repeatedly | `testStartupAccountHintDoesNotCreateProcessRestartLoop`; reuse the handshake/process and invalidate account values |
+| Blocking stdin prevented stop and an oversized reflected ID caused SIGPIPE | `testOversizedServerRequestIDIsNotReflected`; nonblocking bounded writes and per-fd SIGPIPE suppression; `testNonreadingChildCannotBlockStopAndWriterIsBounded`, `testClosedChildStdinDoesNotSendSIGPIPEToHost` exercise actual owned pipes |
+| Old offline completion overwrote a later enable; old values survived pending stop | `testOfflineTransitionCannotOverwriteLaterEnableWhileStopIsPending`; clear immediately and check transition generation after await |
+| Quota notification displaced an account-change hint | `testAccountChangeHintSurvivesQuotaHintFlood`; preserve account priority until the next account read |
+
+Additional behavioral RED → GREEN tests preserve large Int64 duration precision
+and classify the installed schema's optional absent account as authentication
+absent, clearing cached values. There are no deferred reviewer findings. Later
+hardening/integration tests add coverage; no second independent review is claimed.
+
+### Fresh final verification
+
+Apple Swift 6.4, arm64 macOS 27.0.1 host, macOS SDK 27.0; deployment target remains
+macOS 14. Compiler cache and local Git writes needed sandbox escalation. No tools
+were installed. Context7 resolved and queried current Swift AsyncStream/cancellation
+and Codex app-server documentation; installed generated schema supplied the actual
+wire capability evidence rather than assuming the historical version remained current.
+
+| Check | Result |
+| --- | --- |
+| `swift test --filter QuotaModelsTests` | PASS: 9 tests, 0 failures |
+| `swift test --filter QuotaRPCTests` | PASS: 12 tests, 0 failures |
+| `swift test --filter QuotaProviderTests` | PASS: 16 tests, 0 failures |
+| `swift test` | PASS: 155 tests, 0 failures (118 retained + 37 Stage 4), 10.269 s |
+| Actual synthetic process pipes | PASS: simultaneous multi-megabyte stdout/stderr draining, bounded input backpressure, closed stdin/SIGPIPE protection and owned stop |
+| Whitespace/privacy/scope checks | PASS: no real captures/credentials/raw diagnostics, third-party runtime dependencies, UI or session-accounting changes |
+
+### Single bounded installed capability check
+
+On 2026-10-08, the installed executable reported **Codex CLI 0.160.1**. Protocol
+schema generation succeeded into temporary storage. Its initialize clientInfo,
+optional account field, dynamic rate-limit map/windows and passive read parameters
+were inspected. The version was checked freshly; the historical 0.160.1 result was
+not treated as current proof.
+
+One owned app-server was initialized, acknowledged, then asked for account status
+with refreshToken=false and account limits with excludeResetCreditDetails=true.
+The same root resolver used by session discovery selected its CODEX_HOME. Analytics
+was disabled only in the child. Result: **initialization, account capability and
+quota read succeeded; one bucket, one Weekly primary window; no 5h or secondary**.
+The owned child was stopped. Missing 5h is valid. Only version, outcome and presence
+are recorded; no personal percentages, reset dates, IDs or raw replies were saved.
+
+This was a direct production-RPC capability check before the review fix pass, not
+native UI or end-to-end provider acceptance. Final pipe/state changes are supported
+by the deterministic regressions and actual synthetic owned-process checks, not a
+second live probe. No inference, chat mutation, installation or login was attempted.
+Codex-managed retrieval may use network and its normal authentication housekeeping;
+Sidecar did not directly inspect or modify credentials.
+
+### A8 and A9 coverage and remaining limitations
+
+| Acceptance | Evidence and boundary |
+| --- | --- |
+| A8 | Weekly-only, both known durations, independent buckets, duplicate slots, optional alias/permission fields, authoritative empty map, null/absent fallback, malformed fields, clamping/warnings, exact Int64 durations and Unix seconds. Sparse hints retain full-read metadata and receipt time; only full reads replace/remove buckets. Installed live evidence returned Weekly-only. |
+| A9 | Fake transport/controllable clock cover single-flight, start/manual/wake/reset/poll/stale/retry, unavailable/auth/API-key/init failure, late old replies/notifications, auth loss and offline; RPC tests cover interleaved IDs, 20-second timeout, cancellation, malformed/oversized replies and process exit. Actual synthetic pipes cover drain/backpressure/closed stdin and cleanup. Offline leaves local parsing operational. |
+
+Cross-process notification delivery and account/workspace changes during real desktop
+activity remain **unverified**. No inference was used to provoke changes; polling
+remains essential. Tests demonstrate supplied identities/generations; absent identity
+cannot prove that a historical selected chat matches the current account. Executable
+resolution requires the caller's version/capability verification before claiming
+compatibility; other installed versions, macOS 14, Intel and native UI/quit behavior
+are unverified. Bounded synthetic concurrency tests are not an exhaustive scheduler
+proof. This stage has no persistent metrics/account storage.
+
+Only Stage 4 status/checklists were advanced. Exact current context and actual-model
+attribution remain unavailable. Stop before Stage 5. No push, merge, publication or
+branch deletion occurred; completed branches remain available.
+
+The following records are historical earlier-stage evidence.
+
 ## 2026-10-07 — Stage 3 implementation
 
-**Latest status: Stages 1, 2 and 3 implemented. Stages 4–6 have not started.**
+**Status at the end of Stage 3: Stages 1, 2 and 3 implemented. Stages 4–6 had not started.**
 
 Started `stage/3-session-reader` from clean local `main` at `3673971` after
 Stages 1 and 2 were accepted and merged. Existing branches were retained. All
