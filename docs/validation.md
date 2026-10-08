@@ -35,8 +35,9 @@ symlinked index files.
 
 Tests/build/package ran outside the outer validation sandbox with project-local
 compiler caches. This verifies only the current Apple Silicon Mac. No Intel or
-macOS 14 runtime check is claimed. The rebuilt selector still needs a brief native
-recheck of names/order/layout and shared pinned selection. Earlier owner-reported
+macOS 14 runtime check is claimed. The owner subsequently confirmed that stored names appeared and the list was
+sorted in the rebuilt native app. Compact date presentation was requested; no
+additional shared-selection/layout acceptance is inferred from that report. Earlier owner-reported
 manual acceptance predates this change; keyboard navigation, VoiceOver and real
 completed-response live append remain **NOT VERIFIED**. No user-owned app was
 stopped or relaunched during this refinement. No push or merge was performed.
