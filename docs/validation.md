@@ -1,5 +1,21 @@
 # Validation record
 
+## 2026-10-08 — Public demo and README follow-up
+
+Prepared a 25-second interface tour from the previously inspected synthetic
+native previews. GIF and H.264 MP4 each contain five scenes, 960 × 760;
+MP4 has no audio. All scenes were visually inspected, GIF durations sum to
+25 seconds, and all five MP4 scenes decode successfully. Decoded MP4 frames
+were compared against their source scenes. System video codecs required
+execution outside the restricted sandbox. No model requests or app changes.
+
+README now leads with user benefits, the demo, download and unsigned-preview
+installation guidance. README/demo local links and git diff --check pass.
+Removed START_PROMPT.md and STAGE_1_PROMPT.md from the current tree; Git history
+retains both. Specification, research, implementation and validation documents
+remain available for contributors. GitHub topic suggestions are recorded in
+docs/demo/README.md. This entry records preparation, not a remote publication.
+
 ## 2026-10-08 — First public preview published
 
 **Status: PUBLISHED.** Repository `Gerionil/codex-sidecar` is public and

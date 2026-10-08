@@ -1,14 +1,24 @@
 # Codex Sidecar
 
-A passive macOS companion for Codex, with a menu-bar panel and a resizable
-companion window sharing one manually selected local chat. Built with Swift 6,
-SwiftUI and Foundation; no third-party runtime dependencies or metrics database.
+Keep Codex account limits and selected-chat usage close to your work, right in
+the macOS menu bar. Search your local chats, see observed tokens and cache usage,
+and open a companion window when you want more detail.
 
 **[Download 0.1.0](https://github.com/Gerionil/codex-sidecar/releases/tag/v0.1.0)** ·
 [Installation guide](docs/INSTALL.md) · [Release notes](docs/releases/0.1.0.md)
 
 An independent community project by **Gerionil**, not affiliated with OpenAI.
 Free and open source under the [MIT license](LICENSE).
+
+![25-second Codex Sidecar demo with synthetic data](docs/demo/sidecar-demo.gif)
+
+*25-second interface tour with synthetic data.* [MP4 for sharing](docs/demo/sidecar-demo.mp4).
+
+**Apple Silicon preview:** no Apple Developer ID signature or notarization yet.
+See the [first-launch instructions](docs/INSTALL.md) if macOS blocks opening it.
+
+If Sidecar is useful to you, consider giving this repository a star. Bug reports
+and feedback from your Mac are welcome through [Issues](https://github.com/Gerionil/codex-sidecar/issues).
 
 ## What it shows
 
@@ -70,6 +80,9 @@ public preview is unsigned. Licensed under [MIT](LICENSE), copyright 2026
 Gerionil. Apple signing and notarization are deferred by the owner.
 
 ## Build, test and package
+
+Built with Swift 6, SwiftUI and Foundation; no third-party runtime dependencies
+or metrics database.
 
 Use a Swift 6 toolchain with the macOS SDK and XCTest available. The validated
 host uses Apple Swift 6.4 with the active Xcode SDK 27.0. No tools are installed
@@ -260,5 +273,6 @@ address; select the matching asset and network in your wallet before sending.
 - [Validation](docs/validation.md) — fresh checks and scoped acceptance
 - [Working instructions](AGENTS.md) — language, privacy and branch workflow
 
-Starter notes and prompts are historical. Current implementation status is above;
-the specification supersedes earlier starter hypotheses.
+Starter notes are historical. Current implementation status is above;
+the specification supersedes earlier starter hypotheses. Completed-stage agent
+prompts are omitted from the current tree; they remain available in Git history.
