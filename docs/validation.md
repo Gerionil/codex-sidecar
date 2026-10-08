@@ -1,5 +1,52 @@
 # Validation record
 
+## 2026-10-08 — Authorized native interaction acceptance on the current Mac
+
+The owner explicitly authorized Sidecar interaction, temporary settings changes,
+Quit/relaunch and temporary VoiceOver, with restoration and no synthetic model
+requests. Used the native CUA interface against the running app. No raw AX dumps,
+real chat names/IDs, paths or account payloads are stored in this record.
+
+| Check | Observed result |
+| --- | --- |
+| Companion Offline | Visible switch; mouse and Space toggle it; account quotas become unavailable while chat metrics remain |
+| Leaving Offline without Refresh | Loading automatically became Available; repeated keyboard toggle also recovered |
+| Search | Project filtering and a single-match title filter worked; Escape dismissed; selected chat was restored |
+| Keyboard | With macOS Keyboard navigation enabled, Tab reached the result button, Shift+Tab returned to search, Space selected it; Tab reached Offline and Space toggled it |
+| Appearance | System → Light → Dark → System reflected in the preference; only a limited Settings screenshot was available, so this is not full visual acceptance of both native surfaces |
+| Requests/activity | Five request disclosures; Earlier requests changed the displayed page; task disclosure expanded and collapsed; final state returned to newest requests and collapsed activity |
+| Natural completed-response updates | New request rows, request count and observed total increased in the companion while the owner's existing work continued; no model request was created for this test |
+| Lifecycle | Closing the companion left Sidecar running; Quit from its native app menu made it stop; normal bundle launch recreated the window and reloaded data |
+| Persistence/restoration | After explicitly restoring initial overrides and chat, a second normal Quit/launch retained them, System appearance and Offline off; app left running with its original selected chat |
+| AX names | Selected chat, quota window/value, progress, numeric metrics and Quit were exposed; see Settings-label finding below |
+
+Initial macOS Keyboard navigation and VoiceOver were off. Keyboard navigation was
+temporarily enabled to test controls, then verified off again. VoiceOver was
+verified on, but the interface could not retrieve its announcement surface:
+VoiceOver binding timed out, and the utility later was no longer running. The
+system VoiceOver switch was subsequently verified off. No caption preference or
+other VoiceOver settings were changed. VoiceOver speech/announcement acceptance
+therefore remains **NOT VERIFIED**, rather than inferred from an AX tree.
+
+The menu-bar status-item surface could not be reached: SystemUIServer binding
+timed out and the Finder desktop capture was blank. Menu panel interaction,
+Open window action, matching live updates on both surfaces and VoiceOver on the
+panel remain **NOT VERIFIED** in this run. Prior owner-reported checks remain
+historical evidence, not a substitute for these remaining checks.
+
+**Accessibility finding:** after normal bundle launch, repeated full AX reads
+exposed the gearshape Settings button with Description `Refresh` and Help
+`Settings`; the Refresh button also had Description `Refresh`. Clicking the gear
+still opened Settings. This is a reproducible AX naming discrepancy requiring
+investigation/fix or independent announcement verification; do not mark complete
+accessibility acceptance. No product code was changed during this validation.
+
+The first normal bundle launch showed blank overrides/no selected chat; the
+previous launch options were not inspected, so this alone is not established as
+a persistence bug. Initial explicit values and selection were restored through
+Settings and their persistence was then verified by the second normal launch.
+No Intel/other-macOS acceptance is claimed, and no push or merge was performed.
+
 ## 2026-10-08 — Search height and visible Offline switch correction
 
 Owner clarified that the search field should be taller, not wider, and reported

@@ -693,3 +693,12 @@ Owner clarification: restore 360-point popover width and increase search-field
 height to 36 points. Offline must be a visible native switch, so render it in a
 fixed companion header outside toolbar adaptation. Release/package and synthetic
 renders passed; native interaction recheck remains pending.
+
+Authorized native interaction follow-up: current-Mac companion search, Offline
+recovery without Refresh, Tab/Shift+Tab/Space controls, task disclosure, natural
+completed-response updates, Quit and normal-launch persistence were observed.
+Initial settings were restored. VoiceOver announcements and menu panel/both-
+surface live-update checks are still unverified because system surfaces could
+not be bound. Repeated AX reads after normal launch found Settings described as
+Refresh; this remains an accessibility finding. See docs/validation.md for scope
+and evidence. Acceptance is not fully closed.
