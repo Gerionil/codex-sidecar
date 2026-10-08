@@ -4,6 +4,54 @@ A passive macOS companion for Codex, with a menu-bar panel and a resizable
 companion window sharing one manually selected local chat. Built with Swift 6,
 SwiftUI and Foundation; no third-party runtime dependencies or metrics database.
 
+**[Download 0.1.0](https://github.com/Gerionil/codex-sidecar/releases/tag/v0.1.0)** ·
+[Installation guide](docs/INSTALL.md) · [Release notes](docs/releases/0.1.0.md)
+
+An independent community project by **Gerionil**, not affiliated with OpenAI.
+Free and open source under the [MIT license](LICENSE).
+
+## What it shows
+
+- Account quota buckets and reset times, when available from Codex.
+- Observed tokens, completed requests and cache metrics for a selected chat.
+- Model/window metadata, paginated request details and compact task activity.
+- Shared selection in the menu-bar panel and companion window.
+- System, Light and Dark appearance and an Offline switch.
+
+Sidecar does not create model requests. It processes local records and uses a
+separate Codex process for passive account quota reads when online.
+
+## Preview
+
+Native interface renders from the current source with **synthetic demonstration
+data**. They contain no real chats, account information or user logs.
+
+<table>
+  <tr><th>Light</th><th>Dark</th></tr>
+  <tr>
+    <td><img src="docs/screenshots/light-window.png" width="300" alt="Codex Sidecar companion window in light appearance with synthetic data"></td>
+    <td><img src="docs/screenshots/dark-window.png" width="300" alt="Codex Sidecar companion window in dark appearance with synthetic data"></td>
+  </tr>
+  <tr><th>Menu-bar panel</th><th>Search chats</th></tr>
+  <tr>
+    <td><img src="docs/screenshots/dark-panel.png" width="300" alt="Codex Sidecar menu-bar panel in dark appearance with synthetic data"></td>
+    <td><img src="docs/screenshots/dark-chat-browser.png" width="300" alt="Searchable chat selector containing synthetic chats"></td>
+  </tr>
+</table>
+
+## Get started
+
+1. Download the **Apple Silicon ZIP** from the release link above.
+2. Extract it, move **Codex Sidecar.app** into **Applications**, and open it.
+3. If macOS blocks this unsigned preview, follow the [installation guide](docs/INSTALL.md).
+4. Use **Selected chat** to choose a local Codex chat. Use the gear button for
+   data-location overrides, appearance and Offline settings.
+
+The release has **no Apple Developer ID signature or notarization**. It is checked
+on Apple Silicon macOS 27.0.1. Intel is not included; older macOS runtime support
+is unverified. Exact current context usage is unavailable, and observed totals
+are not guaranteed lifetime usage or billing.
+
 ## Current status
 
 Stages 1–5 are implemented and locally merged. **Stage 6 is complete in the
@@ -17,9 +65,9 @@ VoiceOver is excluded by the owner. See the dated
 
 The freshly checked CLI profile is **0.160.1** on Apple Silicon macOS 27.0.1.
 The declared deployment floor is macOS 14; macOS 14 and Intel runtime support
-have not been tested. Windows and Linux are outside this release. This is a local,
-unsigned development build. Licensed under [MIT](LICENSE), copyright 2026
-Gerionil. Publication, signing and notarization require separate owner decisions.
+have not been tested. Windows and Linux are outside this release. The first
+public preview is unsigned. Licensed under [MIT](LICENSE), copyright 2026
+Gerionil. Apple signing and notarization are deferred by the owner.
 
 ## Build, test and package
 
@@ -50,6 +98,8 @@ The packaging script copies the release executable and Info.plist into
 menu-bar template with Retina resolution. Icon masters and regeneration notes
 are in [docs/design/brand](docs/design/brand/README.md). Build outputs and local validation scratch files are
 ignored. Packaging does not install, sign, notarize, upload or enable autostart.
+To produce the Apple Silicon ZIP with a license, installation guide and checksum,
+run `scripts/package-release.sh` (or pass `--disable-sandbox` where required).
 The validation sandbox also required narrowly approved execution outside it for
 native launch and tests; `--disable-sandbox` alone does not lift the host's outer
 sandbox restrictions. Check command failures before treating the app as built.

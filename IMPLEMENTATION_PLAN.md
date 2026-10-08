@@ -768,3 +768,13 @@ The owner selected MIT with copyright attribution to Gerionil. Added LICENSE
 and updated current README/research status. Historical Stage 6 license gates
 above describe the earlier state. No publication, push, merge, donation account
 creation or payment configuration is authorized by this license choice.
+
+## First public preview — 2026-10-08
+
+The owner subsequently authorized all proposed publication steps except Apple
+Developer ID signing/notarization: privacy/history review, public README and
+synthetic native screenshots, release notes, Apple Silicon ZIP/checksum,
+integration into main, GitHub push, public visibility and GitHub Release 0.1.0.
+Completed stage branches must be retained. Release checks and remaining platform
+limits are recorded in docs/validation.md. No donation platform setup or financial
+transaction is included.

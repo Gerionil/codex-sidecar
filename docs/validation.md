@@ -1,5 +1,37 @@
 # Validation record
 
+## 2026-10-08 — First public preview preparation
+
+The owner authorized history/file review, public README/screenshots, a ZIP
+release, main integration, GitHub push, public repository visibility and release
+publication. Apple Developer ID signing and notarization remain deferred.
+
+| Check | Fresh result |
+| --- | --- |
+| Full XCTest suite | 200 tests, zero failures, 15.730 seconds; exit 0 |
+| Release app build | Passed; exit 0; Apple Silicon arm64 |
+| Release ZIP packaging | Passed; app, icon/resources, LICENSE and INSTALL.md included |
+| Archive integrity/checksum | ZIP CRC checks and SHA-256 verification passed |
+| History privacy scan | 277 unique reachable blobs scanned before release-document additions; no home paths, private-key blocks or credential-shaped tokens; nine email-like matches reviewed as synthetic examples or a Retina filename |
+| Author metadata | Existing commits use the owner's GitHub noreply address |
+| GitHub surfaces | Only main exists remotely; zero workflow runs and zero issues/PRs at preparation |
+| Public screenshots | Fresh renders of actual native views using synthetic records, quota/catalog providers only; visually inspected |
+| Binary privacy | Debug maps initially contained local build paths; release packaging strips debug maps; final ZIP executable contains no matched home paths |
+| Executable integrity | Stripped executable's existing linker-generated ad hoc signature verified with resources ignored; no Developer ID certificate or notarization added |
+| Extracted ZIP native smoke | Isolated/offline instance launched; selected synthetic chat; total 180, two completed requests, 66.67% cache hit; test instance quit |
+
+The packaging helper creates the Apple Silicon ZIP and SHA256SUMS.txt, includes
+MIT attribution and installation instructions, and strips debug maps from the
+staged executable. Public screenshot content omits system window frames/toolbars
+and may show inactive controls; it is labeled a synthetic demonstration.
+
+Local extraction/native launch is verified. A GitHub-download smoke check and
+public accessibility check follow publication preparation. CLI downloads do not
+establish browser quarantine/Gatekeeper acceptance. Gatekeeper exceptions depend
+on the user's macOS/policies; the installation guide links Apple's per-app flow
+and does not disable system protections. Intel, older macOS and VoiceOver limits
+remain unchanged.
+
 ## 2026-10-08 — Stage 6 closure in the agreed current-Mac scope
 
 **Status: COMPLETE in the owner-approved current-Mac scope.** This entry
