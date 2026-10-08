@@ -1,5 +1,34 @@
 # Validation record
 
+## 2026-10-08 — Live Dock icon follow-up
+
+The owner's screenshot shows a generic application tile in the live Dock while
+the menu-bar mark is present. This corrects the earlier inference: successful
+NSWorkspace file-icon lookup did not establish the live process's Dock image.
+The bundle contains a valid ICNS and CFBundleIconFile, but the app previously
+relied solely on default bundle metadata for its live icon. The exact reason
+for the discrepancy (including launch mode or cached metadata) is not established.
+
+Added explicit NSApplication.applicationIconImage assignment from the existing
+bundled ICNS in applicationDidFinishLaunching. The asset is loaded through
+Bundle.module, so app and SwiftPM launch layouts use the same source. Kept the
+image non-template; the menu-bar image remains a template.
+
+Fresh release/package and diff checks passed. A synthetic packaged AppKit probe
+loaded the ICNS, assigned it to applicationIconImage and rendered the returned
+live image: it showed the selected C/blue companion artwork. The initial probe
+used an object-identity assertion, which failed because AppKit returned a
+different NSImage; the follow-up checked valid image content and inspected its
+render rather than assuming object identity. Dock binding through CUA timed
+out, so direct live-Dock visual acceptance still requires owner confirmation.
+The updated packaged application was Quit/relaunched through CUA and left
+running. The prior instance showed Offline on with no chat; a normal bundle
+launch initially loaded saved settings with Offline off. Prior launch arguments
+were not captured, so this is not evidence of an icon-related persistence bug.
+No preference control was changed during this follow-up.
+No core behavior changed and the full suite was not repeated for this startup
+icon assignment. Prior test-suite limitations remain recorded below.
+
 ## 2026-10-08 — Owner-selected Companion logo integration
 
 The owner chose concept A. Added a graphite C with a blue detached companion on

@@ -729,3 +729,10 @@ release/package, packaged resource probe, small/light/dark renders and independe
 review passed. Updated app launched normally. XCTest passed as separate 195 + 3
 runs; combined runs stalled in the existing version-probe waitUntilExit path,
 recorded in docs/validation.md without an unsupported root-cause claim.
+
+
+Owner-reported live Dock placeholder: explicitly assign the existing bundled
+ICNS to NSApplication.applicationIconImage at launch. Release/package and an
+AppKit live-image rendering probe passed. Direct Dock binding timed out; owner
+visual recheck remains pending. Earlier NSWorkspace lookup is not proof of the
+live Dock tile. No settings or accounting change.

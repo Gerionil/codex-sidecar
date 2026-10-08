@@ -8,6 +8,8 @@ final class SidecarApplicationDelegate: NSObject, NSApplicationDelegate {
     private var wakeObserver: NSObjectProtocol?
     private var quitting = false
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Apply the live Dock image independently of cached bundle metadata.
+        NSApplication.shared.applicationIconImage = SidecarBrand.dockImage
         wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didWakeNotification,
             object: nil, queue: .main) { [weak self] _ in
                 Task { @MainActor in await self?.store?.wake() }
