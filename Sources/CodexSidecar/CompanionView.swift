@@ -4,30 +4,31 @@ import SidecarCore
 struct CompanionView: View {
     @ObservedObject var store: SidecarStore
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                ChatSelector(store: store)
-                Divider()
-                QuotaSection(store: store)
-                Divider()
-                UsageSection(store: store)
-                Divider()
-                ContextSection(store: store)
-                Divider()
-                requestList
-            }.padding(20)
-        }
-        .modifier(SidecarSurface())
-        .toolbar {
-            HStack(spacing: 12) {
-                Toggle("Offline", isOn: Binding(get: { store.settings.offline }, set: { value in
-                    Task { await store.setOffline(value) }
-                })).toggleStyle(.switch).controlSize(.small)
-                    .accessibilityLabel("Offline mode")
-                    .help("Pause account quota access; local chat metrics remain available")
-                SidecarActions(store: store)
+        VStack(spacing: 0) {
+            Toggle("Offline", isOn: Binding(get: { store.settings.offline }, set: { value in
+                Task { await store.setOffline(value) }
+            })).toggleStyle(.switch)
+                .accessibilityLabel("Offline mode")
+                .help("Pause account quota access; local chat metrics remain available")
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.horizontal, 20).padding(.vertical, 12)
+            Divider()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    ChatSelector(store: store)
+                    Divider()
+                    QuotaSection(store: store)
+                    Divider()
+                    UsageSection(store: store)
+                    Divider()
+                    ContextSection(store: store)
+                    Divider()
+                    requestList
+                }.padding(20)
             }
         }
+        .modifier(SidecarSurface())
+        .toolbar { SidecarActions(store: store) }
     }
     private var requestList: some View {
         SidecarSection(title: "Recent completed requests") {

@@ -1,5 +1,20 @@
 # Validation record
 
+## 2026-10-08 — Search height and visible Offline switch correction
+
+Owner clarified that the search field should be taller, not wider, and reported
+Offline appeared as a label in the native toolbar. Restored the popover's original
+360-point width and gave the search field a 36-point height. Moved the bound native
+Offline switch out of toolbar adaptation into a fixed header above the companion
+scroll view. It uses the same store/setOffline behavior; quota logic is unchanged.
+
+Fresh release/package exit 0 and `git diff --check` passed. Synthetic offscreen
+light/dark/narrow companion and search renders inspected: switch track/thumb and
+taller search field are visible. Native toggle/search typing recheck remains
+pending; offscreen captures do not establish interaction acceptance. The previous
+198-test result covers unchanged core logic; the full suite was not repeated for
+this layout-only correction. No real data probe, app restart, push or merge.
+
 ## 2026-10-08 — Wider search and Offline recovery
 
 Owner requested wider search, Offline access at the top of the companion, and

@@ -14,7 +14,10 @@ struct ChatBrowser: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Choose a chat").font(.headline)
             TextField("Search chats or projects", text: $query)
-                .textFieldStyle(.roundedBorder).focused($searchFocused)
+                .textFieldStyle(.plain).focused($searchFocused)
+                .padding(.horizontal, 10).frame(height: 36)
+                .background(.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 8))
+                .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(.primary.opacity(0.15)) }
                 .accessibilityLabel("Search chats or projects")
             if let id = store.selectedID, !store.sessions.contains(where: { $0.id == id }) {
                 Text("Pinned chat · Sources unavailable").font(.caption)
@@ -46,7 +49,7 @@ struct ChatBrowser: View {
             }
             Text("\(matches.count) chats · Recent activity first within roots and children")
                 .font(.caption).foregroundStyle(.secondary)
-        }.padding(14).frame(width: 420, height: 420)
+        }.padding(14).frame(width: 360, height: 420)
             .modifier(SidecarSurface())
             .onAppear { searchFocused = true }
             .onExitCommand { dismiss() }

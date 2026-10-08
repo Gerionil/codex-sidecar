@@ -688,3 +688,8 @@ limited to one immediate reread, then scheduled polling. Full suite (198 tests),
 release/package, synthetic render and independent review passed. Real-process
 Offline interaction recheck remains pending. Individual request titles are absent
 from current allowlisted metadata; no transcript-derived labels were added.
+
+Owner clarification: restore 360-point popover width and increase search-field
+height to 36 points. Offline must be a visible native switch, so render it in a
+fixed companion header outside toolbar adaptation. Release/package and synthetic
+renders passed; native interaction recheck remains pending.

@@ -457,8 +457,9 @@ the same collapsed pagination. Summaries describe observed activity only and do
 not assign token costs to individual calls. Search and disclosure/page state stay
 in memory; no new persisted fields or data sources.
 
-Owner follow-up: search popover width is 420 points; Offline is accessible from
-the companion toolbar as well as panel/settings. An account-generation hint
+Owner clarification: search popover width remains 360 points; the search field
+is 36 points high. Offline is a visible switch in a fixed companion header below
+the window toolbar, as well as accessible from panel/settings. An account-generation hint
 during a quota read may invalidate it; perform at most one immediate recovery
 read on the same valid process, then retain ordinary polling/backoff for repeated
 hints. Offline/Stop cancels this recovery. No individual request titles are
